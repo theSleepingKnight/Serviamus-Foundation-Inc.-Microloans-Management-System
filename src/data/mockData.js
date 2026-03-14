@@ -6,12 +6,12 @@ export const USERS = [
 ];
 
 export const INITIAL_CUSTOMERS = [
-    { id: 'c1', name: 'Baltazar, Francisco', email: 'kiko@example.com', phone: '0917-123-4567', status: 'Active', joinedDate: '2023-01-15', address: 'Tondo, Manila', barangay: 'San Jose' },
-    { id: 'c2', name: 'Silang, Gabriela', email: 'gabby@example.com', phone: '0918-234-5678', status: 'Active', joinedDate: '2023-02-20', address: 'Vigan, Ilocos Sur', barangay: 'San Pedro' },
-    { id: 'c3', name: 'Bonifacio, Andres', email: 'andres@example.com', phone: '0919-345-6789', status: 'Disabled', joinedDate: '2023-03-10', address: 'Tondo, Manila', barangay: 'San Jose' },
-    { id: 'c4', name: 'Aquino, Melchora', email: 'tandang.sora@example.com', phone: '0920-456-7890', status: 'Active', joinedDate: '2023-04-05', address: 'Santo Niño, Pagadian', barangay: 'Santo Niño' },
-    { id: 'c5', name: 'Aguinaldo, Emilio', email: 'emilio@example.com', phone: '0921-567-8901', status: 'Active', joinedDate: '2023-05-12', address: 'Kawit, Cavite', barangay: 'San Jose' },
-    { id: 'c6', name: 'Mabini, Apolinario', email: 'poli@example.com', phone: '0922-678-9012', status: 'Active', joinedDate: '2023-06-18', address: 'Balangasan, Pagadian', barangay: 'Balangasan' },
+    { id: 'c1', name: 'Baltazar, Francisco', email: 'kiko@example.com', phone: '0917-123-4567', status: 'Active', joinedDate: '2023-01-15', address: 'Tondo, Manila', barangay: 'San Jose', cbuBalance: 1250, sdBalance: 850, afBalance: 125 },
+    { id: 'c2', name: 'Silang, Gabriela', email: 'gabby@example.com', phone: '0918-234-5678', status: 'Active', joinedDate: '2023-02-20', address: 'Vigan, Ilocos Sur', barangay: 'San Pedro', cbuBalance: 2100, sdBalance: 1450, afBalance: 210 },
+    { id: 'c3', name: 'Bonifacio, Andres', email: 'andres@example.com', phone: '0919-345-6789', status: 'Disabled', joinedDate: '2023-03-10', address: 'Tondo, Manila', barangay: 'San Jose', cbuBalance: 500, sdBalance: 300, afBalance: 50 },
+    { id: 'c4', name: 'Aquino, Melchora', email: 'tandang.sora@example.com', phone: '0920-456-7890', status: 'Active', joinedDate: '2023-04-05', address: 'Santo Niño, Pagadian', barangay: 'Santo Niño', cbuBalance: 3400, sdBalance: 2200, afBalance: 340 },
+    { id: 'c5', name: 'Aguinaldo, Emilio', email: 'emilio@example.com', phone: '0921-567-8901', status: 'Active', joinedDate: '2023-05-12', address: 'Kawit, Cavite', barangay: 'San Jose', cbuBalance: 1800, sdBalance: 1100, afBalance: 180 },
+    { id: 'c6', name: 'Mabini, Apolinario', email: 'poli@example.com', phone: '0922-678-9012', status: 'Active', joinedDate: '2023-06-18', address: 'Balangasan, Pagadian', barangay: 'Balangasan', cbuBalance: 2900, sdBalance: 1750, afBalance: 290 },
 ];
 
 export const INITIAL_LOAN_GROUPS = [

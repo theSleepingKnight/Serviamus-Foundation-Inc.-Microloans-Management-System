@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Serviamus Capstone Documentation</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; line-height: 1.6; color: #333; max-width: 900px; margin: 40px auto; padding: 20px; }
+        h1 { color: #1e3a8a; border-bottom: 3px solid #1e3a8a; padding-bottom: 10px; text-align: center; }
+        h2 { color: #1e40af; border-bottom: 2px solid #e5e7eb; padding-bottom: 5px; margin-top: 40px; }
+        h3 { color: #3b82f6; margin-top: 30px; }
+        .screenshot { border: 1px solid #e5e7eb; border-radius: 8px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); margin: 20px auto; width: 100%; max-width: 6.5in; height: auto; display: block; }
+        .caption { text-align: center; font-style: italic; color: #6b7280; font-size: 0.9em; margin-bottom: 30px; border-bottom: 1px dashed #e5e7eb; padding-bottom: 10px; }
+        .objective-box { background: #f0f9ff; border-left: 4px solid #3b82f6; padding: 15px; margin: 20px 0; }
+        .manual-step { margin-bottom: 20px; }
+        .manual-step b { color: #1e40af; }
+        table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+        th, td { border: 1px solid #e5e7eb; padding: 12px; text-align: left; }
+        th { background: #f9fafb; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+    <h1>Serviamus Foundation Inc.</h1>
+    <h2 style="text-align: center; border-bottom: none; margin-top: 0;">Advanced Microloans Management System</h2>
+    <p style="text-align: center; color: #6b7280;">Capstone Project Documentation & User Procedures Manual</p>
+
+    <div class="objective-box">
+        <b>Project Vision:</b> To empower local microfinance officers with a digital ecosystem that eliminates manual paper trails, enhances data accuracy, and streamlines the collection process through a "Paper-Lite" operational model.
+    </div>
+
+    <h2>1. Executive Summary</h2>
+    <p>The Serviamus Microloans Management System is designed for non-technical business users and technical evaluators alike. It bridges the gap between traditional manual tallying and modern digital efficiency. By centralizing customer records and automating complex loan logic, the system ensures that the Foundation can focus on community growth rather than technical bottlenecks.</p>
+
+    <h2>2. System Objectives</h2>
+    <ul>
+        <li><b>Digital Transformation</b>: Replacing physical ledger books with an immutable digital database.</li>
+        <li><b>Operational Speed</b>: Reducing group collection processing time via specialized batch modes.</li>
+        <li><b>Business Intelligence</b>: Providing management with real-time projected revenue and portfolio health metrics.</li>
+    </ul>
+
+    <h2>3. Core Modules Overview</h2>
+
+    <h3>3.1 The Executive Dashboard</h3>
+    <p>The Dashboard serves as the central hub for monitoring organizational performance. It highlights key performance indicators (KPIs) and visualizes data trends across weekly and monthly periods.</p>
+    <div style="text-align: center; margin: 20px 0;">
+        <img src="file:///C:/Users/sleepingknight/.gemini/antigravity/brain/23e38647-d163-4396-a9c5-ecb838865ae2/dashboard_overview_1773468778722.png" class="screenshot" width="624" height="390">
+        <div class="caption">Figure 1: Executive Dashboard with real-time revenue and loan distribution analytics.</div>
+    </div>
+
+    <h3>3.2 Customer Database & Intelligence</h3>
+    <p>The system maintains a comprehensive database of all members, organized by Barangay. The new "Customer Profile" view acts as a digital dossier, housing every piece of relevant information from contact details to financial standing.</p>
+    <div style="text-align: center; margin: 20px 0;">
+        <img src="file:///C:/Users/sleepingknight/.gemini/antigravity/brain/23e38647-d163-4396-a9c5-ecb838865ae2/customers_management_view_1773468790255.png" class="screenshot" width="624" height="390">
+        <div class="caption">Figure 2: Customer Management interface featuring summary statistics and geographic filtering.</div>
+    </div>
+
+    <div style="text-align: center; margin: 20px 0;">
+        <img src="file:///C:/Users/sleepingknight/.gemini/antigravity/brain/23e38647-d163-4396-a9c5-ecb838865ae2/customer_profile_modal_1773468816127.png" class="screenshot" width="624" height="390">
+        <div class="caption">Figure 3: Detailed Customer Profile Modal showing financial pulse and reference data.</div>
+    </div>
+
+    <h3>3.3 Loan Group Management</h3>
+    <p>Loans are managed in "Groups" to mirror physical collection routes. The archiving feature allows officers to hide completed cycles while maintaining a clear audit trail.</p>
+    <div style="text-align: center; margin: 20px 0;">
+        <img src="file:///C:/Users/sleepingknight/.gemini/antigravity/brain/23e38647-d163-4396-a9c5-ecb838865ae2/loans_groups_active_1773468839687.png" class="screenshot" width="624" height="390">
+        <div class="caption">Figure 4: Active Loan Groups view with assigned officers and progress tracking.</div>
+    </div>
+
+    <div style="text-align: center; margin: 20px 0;">
+        <img src="file:///C:/Users/sleepingknight/.gemini/antigravity/brain/23e38647-d163-4396-a9c5-ecb838865ae2/archive_confirmation_modal_1773468850429.png" class="screenshot" width="624" height="390">
+        <div class="caption">Figure 5: Custom Archiving Workflow - designed for high readability and operational safety.</div>
+    </div>
+
+    <h3>3.4 Modern Collection Desk</h3>
+    <p>The payment module supports both individual walk-ins and high-speed group collections. The "Batch Payment Sheet" is a digital replica of common manual ledgers, optimized for rapid data entry.</p>
+    <div style="text-align: center; margin: 20px 0;">
+        <img src="file:///C:/Users/sleepingknight/.gemini/antigravity/brain/23e38647-d163-4396-a9c5-ecb838865ae2/payments_individual_mode_1773468868084.png" class="screenshot" width="624" height="390">
+        <div class="caption">Figure 6: Individual Payment Processing Desk.</div>
+    </div>
+
+    <div style="text-align: center; margin: 20px 0;">
+        <img src="file:///C:/Users/sleepingknight/.gemini/antigravity/brain/23e38647-d163-4396-a9c5-ecb838865ae2/payments_batch_sheet_1773468891193.png" class="screenshot" width="624" height="390">
+        <div class="caption">Figure 7: High-Speed Batch Payment Sheet for group-wide collections.</div>
+    </div>
+
+    <h2>4. Procedures Manual (User Guide)</h2>
+
+    <div class="manual-step">
+        <b>Step 1: Daily Monitoring</b><br>
+        Staff should begin by reviewing the <b>Daily Metrics</b> on the dashboard. Pay close attention to "Receipts Issued" to ensure all physical collections from the field are encoded into the system.
+    </div>
+
+    <div class="manual-step">
+        <b>Step 2: Member Onboarding & Verification</b><br>
+        When a new member applies, they are added via the "Register New Customer" button in the Customers module. Once added, their profile can be verified at any time using the <b>"View Profile"</b> button (See Figure 3).
+    </div>
+
+    <div class="manual-step">
+        <b>Step 3: Loan Processing & Archiving</b><br>
+        1. Access the <b>Loans</b> module.<br>
+        2. Assign new members to relevant Barangay groups.<br>
+        3. Once a group has completed its repayment cycle (Weeks 1-25), use the <b>Archive Group</b> button. This ghosts the group card and changes its status, preventing accidental new charges while keeping the data for the Year-End report.
+    </div>
+
+    <div class="manual-step">
+        <b>Step 4: Field Collection Entry (Batch Mode)</b><br>
+        1. Navigate to <b>Payments</b>.<br>
+        2. Toggle to <b>"Group Batch"</b> mode.<br>
+        3. Open the <b>Payment Sheet</b> for the specific route group.<br>
+        4. Enter the amounts collected as recorded in the field notebooks.<br>
+        5. Verify the <b>"Total to Process"</b> matches the actual cash on hand before clicking <b>Confirm Batch</b>.
+    </div>
+
+    <div class="manual-step">
+        <b>Step 5: System Maintenance</b><br>
+        Administrators can update interest rates, CBU requirements, and penalties via the **Settings** gear icon. Changes are reflected in all new loan applications immediately.
+    </div>
+    <div style="text-align: center; margin: 20px 0;">
+        <img src="file:///C:/Users/sleepingknight/.gemini/antigravity/brain/23e38647-d163-4396-a9c5-ecb838865ae2/system_settings_fees_1773469082976.png" class="screenshot" width="624" height="390">
+        <div class="caption">Figure 8: Administrative Fee and Parameter Configuration.</div>
+    </div>
+
+    <h2>5. Technical Highlights</h2>
+    <p>The system is built as a Single Page Application (SPA), ensuring that users never have to wait for page reloads. This is critical for field entries where efficiency is paramount. The use of React's Context API ensures that as soon as a payment is made in the "Collection Desk," the "Dashboard" analytics update instantly without human intervention.</p>
+
+    <p style="text-align: center; margin-top: 50px; font-size: 0.8em; color: #9ca3af;">&copy; 2026 Serviamus Foundation Inc. | Serviamus Advanced Microloans Management System</p>
+
+</body>
+</html>

@@ -40,7 +40,13 @@ export const SystemProvider = ({ children }) => {
     const [staffAccounts, setStaffAccounts] = useState(() => loadFromStorage(STORAGE_KEYS.STAFF, USERS));
     const [transactions, setTransactions] = useState(() => loadFromStorage(STORAGE_KEYS.TRANSACTIONS, INITIAL_TRANSACTIONS));
     const [auditLogs, setAuditLogs] = useState(() => loadFromStorage(STORAGE_KEYS.LOGS, INITIAL_LOGS));
-    const [loanGroups, setLoanGroups] = useState(() => loadFromStorage(STORAGE_KEYS.GROUPS, INITIAL_LOAN_GROUPS));
+    const [loanGroups, setLoanGroups] = useState(() => {
+        const saved = loadFromStorage(STORAGE_KEYS.GROUPS, INITIAL_LOAN_GROUPS);
+        return saved.map(g => ({
+            ...g,
+            status: g.status || 'Active'
+        }));
+    });
     const [settings, setSettings] = useState(() => loadFromStorage(STORAGE_KEYS.SETTINGS, {
         adminFeePercent: 2,
         cbuPercent: 1, // Traditional 1%
@@ -96,6 +102,19 @@ export const SystemProvider = ({ children }) => {
 
     const logout = () => {
         setCurrentUser(null);
+    };
+
+    const resetSystemData = () => {
+        if (window.confirm("CRITICAL: This will delete ALL current loans, groups, customers, and transactions and reset them to factory defaults. This action cannot be undone. Continue?")) {
+            // Clear all database keys except the session
+            Object.values(STORAGE_KEYS).forEach(key => {
+                if (key !== STORAGE_KEYS.USER) {
+                    localStorage.removeItem(key);
+                }
+            });
+            // Refresh to re-initialize state from mockData.js
+            window.location.reload();
+        }
     };
 
     const canAccess = (requiredRole) => {
@@ -258,10 +277,12 @@ export const SystemProvider = ({ children }) => {
             ...customerData,
             id: `c_${Date.now()}`,
             joinedDate: new Date().toISOString().split('T')[0],
-            status: 'Active'
+            status: 'Active',
+            cbuBalance: Number(customerData.cbuBalance) || 0,
+            sdBalance: Number(customerData.sdBalance) || 0
         };
         setCustomers([...customers, newCustomer]);
-        logAction(`Registered new customer: ${customerData.name}`);
+        logAction(`Registered new customer: ${customerData.name} (Initial CBU: ${newCustomer.cbuBalance}, SD: ${newCustomer.sdBalance})`);
         return newCustomer;
     };
 
@@ -386,6 +407,7 @@ export const SystemProvider = ({ children }) => {
             updateLoanGroup,
             logAction,
             settings,
+            resetSystemData,
             updateSettings: (newSettings) => setSettings(prev => ({ ...prev, ...newSettings }))
         }}>
             {children}

@@ -1,16 +1,16 @@
 import React, { useState, useMemo } from 'react';
 import { useSystem } from '../context/AppContext';
-import { CheckCircle, Search, Plus, Edit2, Calendar, ChevronLeft, ChevronRight, FileText, Users, Layers, MapPin, LayoutGrid, List, User, FileSpreadsheet, Settings } from 'lucide-react';
+import { CheckCircle, Search, Plus, Edit2, Calendar, ChevronLeft, ChevronRight, FileText, Users, Layers, MapPin, LayoutGrid, List, User, FileSpreadsheet, Settings, AlertTriangle, RotateCcw, Archive } from 'lucide-react';
 import { LOAN_TYPES, LOAN_STATUS_COLORS, BARANGAYS } from '../utils/constants';
 import Toast from './ui/Toast';
-import { exportCollectionSheet } from '../utils/exportUtils';
+import { exportCollectionSheet, exportGroupReportPDF } from '../utils/exportUtils';
 
 const ITEMS_PER_PAGE = 10;
 
 const Loans = () => {
     const { 
         loans, customers, staffAccounts, loanGroups, currentUser, canAccess, settings, updateSettings,
-        createLoan, updateLoanStatus, updateLoan, createLoanGroup, getOfficerCapacity 
+        createLoan, updateLoanStatus, updateLoan, createLoanGroup, getOfficerCapacity, resetSystemData, updateLoanGroup 
     } = useSystem();
 
     // UI State
@@ -21,6 +21,7 @@ const Loans = () => {
     const [isFeesModalOpen, setIsFeesModalOpen] = useState(false);
     const [tempFees, setTempFees] = useState(settings);
     const [toast, setToast] = useState(null);
+    const [archiveConfirmGroup, setArchiveConfirmGroup] = useState(null);
 
     // Filter & Search State
     const [searchTerm, setSearchTerm] = useState('');
@@ -182,23 +183,95 @@ const Loans = () => {
                     <h2 className="text-2xl font-bold text-slate-800">Loans Management</h2>
                     <p className="text-slate-500 text-sm">Manage group-based disbursements and officer assignments.</p>
                 </div>
-                <div className="flex items-center gap-2 bg-slate-100 p-1 rounded-xl">
+                <div className="flex items-center gap-2">
+                    {canAccess('admin') && (
+                        <button
+                            onClick={() => {
+                                setTempFees(settings);
+                                setIsFeesModalOpen(true);
+                            }}
+                            className="flex items-center gap-2 text-slate-500 hover:text-slate-800 px-3 py-2 rounded-lg transition-all hover:bg-slate-100 text-sm font-medium"
+                        >
+                            <Settings size={18} />
+                            Update Fees
+                        </button>
+                    )}
                     <button
-                        onClick={() => setViewMode('groups')}
-                        className={`flex items-center gap-2 px-4 py-1.5 rounded-lg text-sm font-bold transition-all ${viewMode === 'groups' ? 'bg-white text-brand-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+                        onClick={() => {
+                            setNewGroup({ name: '', barangay: '', officerId: '' });
+                            setIsAddGroupModalOpen(true);
+                        }}
+                        className="flex items-center gap-2 bg-slate-800 hover:bg-slate-900 text-white px-4 py-2 rounded-lg transition-colors text-sm font-bold shadow-sm"
                     >
-                        <LayoutGrid size={16} />
-                        Groups
+                        <Plus size={18} />
+                        New Group
                     </button>
                     <button
-                        onClick={() => setViewMode('list')}
-                        className={`flex items-center gap-2 px-4 py-1.5 rounded-lg text-sm font-bold transition-all ${viewMode === 'list' ? 'bg-white text-brand-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+                        onClick={() => {
+                            setNewLoan({ customerId: '', loanType: 'REGULAR', amount: '', term: '', groupId: '', officerId: '' });
+                            setIsModalOpen(true);
+                        }}
+                        className="flex items-center gap-2 bg-brand-600 hover:bg-brand-700 text-white px-4 py-2 rounded-lg transition-colors text-sm font-bold shadow-sm"
                     >
-                        <List size={16} />
-                        List
+                        <Plus size={18} />
+                        New Loan
                     </button>
                 </div>
-                <div className="flex gap-2">
+            </div>
+
+            {/* Toolbar */}
+            <div className="bg-white p-2 rounded-xl shadow-sm border border-slate-100 flex flex-col md:flex-row gap-2">
+                <div className="flex-1 flex gap-2">
+                    <div className="relative flex-1 max-w-xs">
+                        <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
+                        <input
+                            type="text"
+                            placeholder="Search borrower or ID..."
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                            className="pl-9 pr-4 py-2 w-full text-sm border border-slate-200 rounded-lg focus:ring-2 focus:ring-brand-500 outline-none"
+                        />
+                    </div>
+                    <select
+                        value={statusFilter}
+                        onChange={(e) => setStatusFilter(e.target.value)}
+                        className="px-3 py-2 border border-slate-200 rounded-lg text-sm bg-slate-50 focus:ring-2 focus:ring-brand-500 outline-none min-w-[140px]"
+                    >
+                        <option value="All">All Statuses</option>
+                        <option value="Active">Active</option>
+                        <option value="Pending">Pending</option>
+                        <option value="Paid">Paid</option>
+                    </select>
+                    <select
+                        value={barangayFilter}
+                        onChange={(e) => setBarangayFilter(e.target.value)}
+                        className="px-3 py-2 border border-slate-200 rounded-lg text-sm bg-slate-50 focus:ring-2 focus:ring-brand-500 outline-none min-w-[160px]"
+                    >
+                        <option value="All">All Barangays</option>
+                        {[...new Set(customers.map(c => c.barangay).filter(Boolean))].map(b => (
+                            <option key={b} value={b}>{b}</option>
+                        ))}
+                    </select>
+                </div>
+
+                <div className="flex items-center gap-2 border-l border-slate-100 pl-2">
+                    <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-lg">
+                        <button
+                            onClick={() => setViewMode('groups')}
+                            className={`p-1.5 rounded-md transition-all ${viewMode === 'groups' ? 'bg-white text-brand-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+                            title="Group View"
+                        >
+                            <LayoutGrid size={18} />
+                        </button>
+                        <button
+                            onClick={() => setViewMode('list')}
+                            className={`p-1.5 rounded-md transition-all ${viewMode === 'list' ? 'bg-white text-brand-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+                            title="List View"
+                        >
+                            <List size={18} />
+                        </button>
+                    </div>
+                    
                     <button
                         onClick={() => {
                             const filteredGroups = loanGroups.filter(g => barangayFilter === 'All' || g.barangay === barangayFilter);
@@ -211,178 +284,147 @@ const Loans = () => {
                                 generatedBy: currentUser?.name
                             });
                         }}
-                        className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg transition-colors font-medium shadow-sm"
-                        title="Print Collection Sheet for current view"
+                        className="flex items-center gap-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 px-4 py-2 rounded-lg transition-colors text-xs font-bold border border-indigo-100"
                     >
-                        <FileText size={18} />
+                        <FileSpreadsheet size={16} />
                         Collection Sheet
                     </button>
-                    <button
-                        onClick={() => {
-                            setNewGroup({ name: '', barangay: '', officerId: '' });
-                            setIsAddGroupModalOpen(true);
-                        }}
-                        className="flex items-center gap-2 bg-slate-800 hover:bg-slate-900 text-white px-4 py-2 rounded-lg transition-colors font-medium shadow-sm"
-                    >
-                        <Plus size={18} />
-                        Create New Group
-                    </button>
-                    <button
-                        onClick={() => {
-                            setNewLoan({ customerId: '', loanType: 'REGULAR', amount: '', term: '', groupId: '', officerId: '' });
-                            setIsModalOpen(true);
-                        }}
-                        className="flex items-center gap-2 bg-brand-600 hover:bg-brand-700 text-white px-4 py-2 rounded-lg transition-colors font-medium shadow-sm"
-                    >
-                        <Plus size={18} />
-                        New Loan
-                    </button>
-                    {canAccess('admin') && (
-                        <button
-                            onClick={() => {
-                                setTempFees(settings);
-                                setIsFeesModalOpen(true);
-                            }}
-                            className="p-2 text-slate-400 hover:text-brand-600 hover:bg-white rounded-lg transition-all border border-slate-200"
-                            title="Update Global Fees"
-                        >
-                            <Settings size={18} />
-                        </button>
-                    )}
                 </div>
-            </div>
-
-            {/* Filters */}
-            <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-100 grid grid-cols-1 md:grid-cols-4 gap-4">
-                <div className="relative">
-                    <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
-                    <input
-                        type="text"
-                        placeholder="Search loans..."
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                        className="pl-9 pr-4 py-2 w-full text-sm border border-slate-200 rounded-lg focus:ring-2 focus:ring-brand-500 outline-none"
-                    />
-                </div>
-                <select
-                    value={statusFilter}
-                    onChange={(e) => setStatusFilter(e.target.value)}
-                    className="px-3 py-2 border border-slate-200 rounded-lg text-sm bg-slate-50 focus:ring-2 focus:ring-brand-500 outline-none"
-                >
-                    <option value="All">All Statuses</option>
-                    <option value="Active">Active</option>
-                    <option value="Pending">Pending</option>
-                    <option value="Paid">Paid</option>
-                </select>
-                <select
-                    value={barangayFilter}
-                    onChange={(e) => setBarangayFilter(e.target.value)}
-                    className="px-3 py-2 border border-slate-200 rounded-lg text-sm bg-slate-50 focus:ring-2 focus:ring-brand-500 outline-none"
-                >
-                    <option value="All">All Barangays</option>
-                    {[...new Set(customers.map(c => c.barangay).filter(Boolean))].map(b => (
-                            <option key={b} value={b}>{b}</option>
-                    ))}
-                </select>
-                <button 
-                    onClick={() => {
-                        setSearchTerm('');
-                        setStatusFilter('All');
-                        setBarangayFilter('All');
-                    }}
-                    className="text-xs font-bold text-slate-400 hover:text-brand-600 uppercase tracking-wider transition-colors"
-                >
-                    Reset Filters
-                </button>
             </div>
 
             {/* Content View */}
             {viewMode === 'groups' ? (
                 <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
                     {loanGroups
-                        .filter(g => barangayFilter === 'All' || g.barangay === barangayFilter)
-                        .filter(g => g.name.toLowerCase().includes(searchTerm.toLowerCase()))
+                        .filter(g => {
+                            const groupLoans = loans.filter(l => l.groupId === g.id);
+                            const groupCustomers = groupLoans.map(l => customers.find(c => c.id === l.customerId));
+                            
+                            const matchesBarangay = barangayFilter === 'All' || g.barangay === barangayFilter;
+                            const matchesStatus = statusFilter === 'All' || groupLoans.some(l => l.status === statusFilter);
+                            const matchesSearch = searchTerm === '' || 
+                                g.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                                groupCustomers.some(c => c?.name.toLowerCase().includes(searchTerm.toLowerCase()));
+                            
+                            return matchesBarangay && matchesStatus && matchesSearch;
+                        })
                         .map(group => {
                             const groupLoans = loans.filter(l => l.groupId === group.id);
                             const percentFull = (groupLoans.length / 5) * 100;
+                                                        // Determine status
+                            const isArchived = group.status === 'Disabled' || group.status === 'Closed';
+                            const isActive = group.status === 'Active';
                             
                             return (
-                                <div key={group.id} className="bg-white rounded-3xl border border-slate-100 shadow-sm hover:shadow-md transition-all overflow-hidden">
+                                <div 
+                                    key={group.id} 
+                                    className={`relative rounded-3xl border transition-all duration-300 overflow-hidden ${
+                                        isActive 
+                                            ? 'bg-white border-slate-100 shadow-sm hover:shadow-md' 
+                                            : 'bg-slate-50 border-slate-200 opacity-90 grayscale-[0.3] border-dashed shadow-none ring-1 ring-slate-200'
+                                    }`}
+                                >
+                                    {isArchived && (
+                                        <div className="absolute top-0 right-0 z-10 px-4 py-1.5 bg-slate-600 text-white text-[10px] font-black uppercase tracking-widest rounded-bl-xl shadow-lg border-l border-b border-slate-700 flex items-center gap-2">
+                                            <Archive size={12} />
+                                            Archived Group
+                                        </div>
+                                    )}
+
                                     {/* Group Header */}
-                                    <div className="p-6 border-b border-slate-50 bg-slate-50/30">
+                                    <div className={`p-6 border-b transition-colors duration-300 ${isActive ? 'border-slate-50 bg-slate-50/30' : 'border-slate-200 bg-slate-100/80'}`}>
                                         <div className="flex justify-between items-start mb-4">
                                             <div>
                                                 <div className="flex items-center gap-2 mb-1">
-                                                    <span className={`text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md ${group.status === 'Active' ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-500'}`}>
+                                                    <span className={`text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md transition-colors ${isActive ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-300 text-slate-700'}`}>
                                                         {group.status}
                                                     </span>
                                                     <span className="text-[10px] font-bold text-slate-400 font-mono">ID: {group.id}</span>
                                                 </div>
-                                                <h3 className="text-lg font-black text-slate-900 tracking-tight flex items-center gap-2">
-                                                    <Layers size={18} className="text-brand-600" />
+                                                <h3 className={`text-lg font-black tracking-tight flex items-center gap-2 transition-colors ${isActive ? 'text-slate-900' : 'text-slate-500'}`}>
+                                                    <Layers size={18} className={isActive ? 'text-brand-600' : 'text-slate-400'} />
                                                     {group.name}
                                                 </h3>
                                             </div>
-                                            <div className="text-right">
-                                                <div className="flex items-center gap-1 justify-end mb-1">
-                                                    {[...Array(5)].map((_, i) => (
-                                                        <div 
-                                                            key={i} 
-                                                            className={`w-2 h-4 rounded-sm ${i < groupLoans.length ? (groupLoans.length === 5 ? 'bg-red-500' : 'bg-brand-500') : 'bg-slate-200'}`}
-                                                        />
-                                                    ))}
+                                            {!isActive ? (
+                                                <div className="p-2 bg-slate-200 rounded-full opacity-60">
+                                                    <Archive size={24} className="text-slate-400" />
                                                 </div>
-                                                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">
-                                                    {groupLoans.length} / 5 Slots Occupied
-                                                </p>
-                                            </div>
+                                            ) : (
+                                                <div className="text-right">
+                                                    <div className="flex items-center gap-1 justify-end mb-1">
+                                                        {[...Array(5)].map((_, i) => (
+                                                            <div 
+                                                                key={i} 
+                                                                className={`w-2 h-4 rounded-sm transition-all ${i < groupLoans.length ? (groupLoans.length === 5 ? 'bg-red-500' : 'bg-brand-500') : 'bg-slate-200'}`}
+                                                            />
+                                                        ))}
+                                                    </div>
+                                                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">
+                                                        {groupLoans.length} / 5 Slots Occupied
+                                                    </p>
+                                                </div>
+                                            )}
                                         </div>
                                         
                                         <div className="flex items-center gap-4 text-xs font-medium text-slate-500">
-                                            <div className="flex items-center gap-1.5 px-2.5 py-1 bg-white rounded-lg border border-slate-100 italic">
-                                                <User size={12} className="text-brand-500" />
+                                            <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg border italic transition-all ${isActive ? 'bg-white/80 border-slate-100' : 'bg-slate-200/50 border-slate-300 text-slate-400'}`}>
+                                                <User size={12} className={isActive ? 'text-brand-500' : 'text-slate-400'} />
                                                 Officer: {getOfficerName(group.officerId)}
                                             </div>
-                                            <div className="flex items-center gap-1.5 px-2.5 py-1 bg-white rounded-lg border border-slate-100">
-                                                <MapPin size={12} className="text-brand-500" />
+                                            <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg border transition-all ${isActive ? 'bg-white/80 border-slate-100' : 'bg-slate-200/50 border-slate-300 text-slate-400'}`}>
+                                                <MapPin size={12} className={isActive ? 'text-brand-500' : 'text-slate-400'} />
                                                 {group.barangay}
                                             </div>
                                         </div>
                                     </div>
 
                                     {/* Members List */}
-                                    <div className="p-4 space-y-2 max-h-[300px] overflow-y-auto bg-slate-50/20">
+                                    <div className={`p-4 space-y-2 max-h-[300px] overflow-y-auto transition-colors ${isActive ? 'bg-slate-50/20' : 'bg-slate-100/20'}`}>
                                         {groupLoans.length > 0 ? (
                                             groupLoans.map((loan, idx) => {
                                                 const customer = customers.find(c => c.id === loan.customerId);
+                                                const isMatch = (statusFilter === 'All' || loan.status === statusFilter) &&
+                                                               (searchTerm === '' || customer?.name.toLowerCase().includes(searchTerm.toLowerCase()));
                                                 return (
-                                                    <div key={loan.id} className="flex items-center justify-between p-3 bg-white rounded-2xl border border-slate-100 group/item hover:border-brand-200 transition-colors">
+                                                    <div 
+                                                        key={loan.id} 
+                                                        className={`flex items-center justify-between p-3 bg-white rounded-2xl border transition-all ${
+                                                            !isMatch 
+                                                                ? 'opacity-40 grayscale-[0.5]' 
+                                                                : isActive ? 'border-slate-100 ring-1 ring-brand-100 shadow-sm' : 'border-slate-200 shadow-none'
+                                                        }`}
+                                                    >
                                                         <div className="flex items-center gap-3">
                                                             <span className="text-xs font-black text-slate-300 w-4">{idx + 1}.</span>
                                                             <div>
-                                                                <p className="text-sm font-bold text-slate-800">{customer?.name}</p>
+                                                                <p className={`text-sm font-bold transition-colors ${isActive ? 'text-slate-800' : 'text-slate-500'}`}>{customer?.name}</p>
                                                                 <p className="text-[10px] font-mono text-slate-400">₱{loan.amount.toLocaleString()} • {loan.loanType}</p>
                                                             </div>
                                                         </div>
                                                         <div className="flex items-center gap-3">
-                                                            <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${LOAN_STATUS_COLORS[loan.status]}`}>
+                                                            <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full transition-colors ${isActive ? LOAN_STATUS_COLORS[loan.status] : 'bg-slate-100 text-slate-400 border border-slate-200'}`}>
                                                                 {loan.status}
                                                             </span>
-                                                            <button 
-                                                                onClick={() => setScheduleModalLoan(loan)}
-                                                                className="opacity-0 group-hover/item:opacity-100 p-1.5 text-slate-400 hover:text-brand-600 transition-all"
-                                                                title="View Schedule"
-                                                            >
-                                                                <FileText size={14} />
-                                                            </button>
-                                                            {loan.status === 'Pending' && (
-                                                                <button 
-                                                                    onClick={() => updateLoanStatus(loan.id, 'Active')} 
-                                                                    className="opacity-0 group-hover/item:opacity-100 p-1.5 text-emerald-600 hover:bg-emerald-50 rounded-lg transition-all" 
-                                                                    title="Approve Loan"
-                                                                >
-                                                                    <CheckCircle size={14} />
-                                                                </button>
+                                                            {isActive && (
+                                                                <div className="flex items-center gap-1">
+                                                                    <button 
+                                                                        onClick={() => setScheduleModalLoan(loan)}
+                                                                        className="p-1.5 text-slate-400 hover:text-brand-600 transition-all"
+                                                                        title="View Schedule"
+                                                                    >
+                                                                        <FileText size={14} />
+                                                                    </button>
+                                                                    {loan.status === 'Pending' && (
+                                                                        <button 
+                                                                            onClick={() => updateLoanStatus(loan.id, 'Active')} 
+                                                                            className="p-1.5 text-emerald-600 hover:bg-emerald-50 rounded-lg transition-all" 
+                                                                            title="Approve Loan"
+                                                                        >
+                                                                            <CheckCircle size={14} />
+                                                                        </button>
+                                                                    )}
+                                                                </div>
                                                             )}
                                                         </div>
                                                     </div>
@@ -396,30 +438,57 @@ const Loans = () => {
                                     </div>
 
                                     {/* Footer Actions */}
-                                    <div className="p-4 bg-slate-50/50 border-t border-slate-100 flex gap-2">
-                                        {groupLoans.length < 5 && (
+                                    <div className={`p-4 border-t flex gap-2 transition-colors duration-300 ${isActive ? 'bg-slate-50/50 border-slate-100' : 'bg-slate-100 border-slate-200'}`}>
+                                        {isActive ? (
+                                            <>
+                                                {groupLoans.length < 5 && (
+                                                    <button 
+                                                        onClick={() => {
+                                                            setNewLoan({ 
+                                                                customerId: '', 
+                                                                loanType: 'REGULAR', 
+                                                                amount: '', 
+                                                                term: '', 
+                                                                groupId: group.id, 
+                                                                officerId: group.officerId 
+                                                            });
+                                                            setIsModalOpen(true);
+                                                        }}
+                                                        className="flex-1 py-2 bg-white text-brand-600 border border-brand-200 rounded-xl text-xs font-black hover:bg-brand-50 transition-colors flex items-center justify-center gap-2"
+                                                    >
+                                                        <Plus size={14} />
+                                                        Add Member
+                                                    </button>
+                                                )}
+                                                <button 
+                                                    onClick={() => setArchiveConfirmGroup(group)}
+                                                    className="px-3 py-2 text-slate-400 hover:text-red-600 bg-white border border-slate-200 rounded-xl text-xs font-black hover:bg-red-50 transition-all flex items-center gap-2"
+                                                    title="Archive Group"
+                                                >
+                                                    <Archive size={14} />
+                                                </button>
+                                            </>
+                                        ) : (
                                             <button 
                                                 onClick={() => {
-                                                    setNewLoan({ 
-                                                        customerId: '', 
-                                                        loanType: 'REGULAR', 
-                                                        amount: '', 
-                                                        term: '', 
-                                                        groupId: group.id, 
-                                                        officerId: group.officerId 
-                                                    });
-                                                    setIsModalOpen(true);
+                                                    updateLoanGroup(group.id, { status: 'Active' });
+                                                    setToast({ message: `Group ${group.name} is now Active.`, type: 'success' });
                                                 }}
-                                                className="flex-1 py-2 bg-white text-brand-600 border border-brand-200 rounded-xl text-xs font-black hover:bg-brand-50 transition-colors flex items-center justify-center gap-2"
+                                                className="flex-1 py-2 bg-emerald-600 text-white border border-emerald-500 rounded-xl text-xs font-black hover:bg-emerald-700 transition-colors shadow-sm flex items-center justify-center gap-2"
                                             >
-                                                <Plus size={14} />
-                                                Add Member
+                                                <RotateCcw size={14} />
+                                                Restore Group
                                             </button>
                                         )}
                                         <button 
-                                            onClick={() => {/* Download Batch Report logic */}}
-                                            className="px-4 py-2 text-slate-600 bg-white border border-slate-200 rounded-xl text-xs font-bold hover:bg-slate-50 transition-colors"
+                                            onClick={() => exportGroupReportPDF(group, loans, customers, staffAccounts)}
+                                            className={`px-4 py-2 rounded-xl text-xs font-black transition-all flex items-center gap-2 ${
+                                                isActive 
+                                                    ? 'text-indigo-600 bg-indigo-50 border border-indigo-100 hover:bg-indigo-100' 
+                                                    : 'text-slate-500 bg-slate-200 border border-slate-300 hover:bg-slate-300'
+                                            }`}
                                         >
+                                            <FileText size={14} />
                                             Batch Report
                                         </button>
                                     </div>
@@ -777,9 +846,20 @@ const Loans = () => {
                                     />
                                 </div>
                             </div>
-                            <p className="text-[10px] text-slate-400 mt-1">
-                                Fees are automatically calculated during payment processing and reflected in the Collection Sheet.
-                            </p>
+                            
+                            <div className="pt-4 border-t border-slate-100">
+                                <button
+                                    onClick={resetSystemData}
+                                    className="w-full flex items-center justify-center gap-2 py-2 text-red-600 bg-red-50 hover:bg-red-100 border border-red-100 rounded-lg text-xs font-black transition-all"
+                                >
+                                    <RotateCcw size={14} />
+                                    RESET SYSTEM TO DEFAULT
+                                </button>
+                                <div className="flex items-start gap-2 mt-2 p-2 bg-slate-50 rounded text-[9px] text-slate-500 leading-normal">
+                                    <AlertTriangle size={12} className="text-amber-500 shrink-0 mt-0.5" />
+                                    <span>Warning: Resetting will synchronize all customers, loans, and groups back to their original mock values. All recent changes will be lost.</span>
+                                </div>
+                            </div>
                         </div>
 
                         <div className="flex gap-3 mt-8">
@@ -798,6 +878,45 @@ const Loans = () => {
                                 className="flex-1 py-2 bg-brand-600 hover:bg-brand-700 text-white font-medium rounded-lg transition-colors shadow-sm"
                             >
                                 Save Changes
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Archive Confirmation Modal */}
+            {archiveConfirmGroup && (
+                <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">
+                    <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md p-8 animate-in zoom-in duration-200 border border-slate-100">
+                        <div className="w-16 h-16 bg-red-50 rounded-2xl flex items-center justify-center mb-6 mx-auto">
+                            <AlertTriangle size={32} className="text-red-600" />
+                        </div>
+                        
+                        <div className="text-center mb-8">
+                            <h3 className="text-xl font-black text-slate-900 mb-2">Archive Group?</h3>
+                            <p className="text-sm text-slate-500 font-medium px-4">
+                                You are about to archive <span className="text-slate-900 font-bold">"{archiveConfirmGroup.name}"</span>. 
+                                No new members or loans can be added to this group once archived.
+                            </p>
+                        </div>
+
+                        <div className="flex flex-col gap-3">
+                            <button
+                                onClick={() => {
+                                    updateLoanGroup(archiveConfirmGroup.id, { status: 'Disabled' });
+                                    setToast({ message: `Group ${archiveConfirmGroup.name} has been archived.`, type: 'info' });
+                                    setArchiveConfirmGroup(null);
+                                }}
+                                className="w-full py-3.5 bg-red-600 hover:bg-red-700 text-white font-black rounded-2xl transition-all shadow-md shadow-red-100 flex items-center justify-center gap-2 uppercase tracking-widest text-xs"
+                            >
+                                <Archive size={16} />
+                                Confirm Archive
+                            </button>
+                            <button
+                                onClick={() => setArchiveConfirmGroup(null)}
+                                className="w-full py-3.5 bg-white text-slate-500 font-bold hover:bg-slate-50 rounded-2xl transition-all border border-slate-200 uppercase tracking-widest text-xs"
+                            >
+                                Cancel
                             </button>
                         </div>
                     </div>

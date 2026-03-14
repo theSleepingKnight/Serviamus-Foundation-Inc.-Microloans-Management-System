@@ -1,4 +1,6 @@
-import * as XLSX from 'xlsx';
+import * as XLSX from 'xlsx-js-style';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 
 /**
  * Exports loan data to a professionally formatted Excel spreadsheet.
@@ -193,4 +195,84 @@ export const exportCollectionSheet = (data, filename = 'Collection_Sheet.xlsx') 
 
     XLSX.utils.book_append_sheet(wb, ws, "Collection Sheet");
     XLSX.writeFile(wb, filename);
+};
+
+export const exportGroupReportPDF = (group, loans, customers, staff, filename = '') => {
+    const doc = new jsPDF();
+    const groupLoans = loans.filter(l => l.groupId === group.id);
+    const officer = staff.find(s => s.id === group.officerId);
+    const timestamp = new Date().toLocaleString();
+    
+    // 1. Branding Header
+    doc.setFillColor(15, 23, 42); // slate-950
+    doc.rect(0, 0, 210, 45, 'F');
+    
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(24);
+    doc.setFont('helvetica', 'bold');
+    doc.text('SERVIAMUS FOUNDATION INC.', 20, 22);
+    
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'normal');
+    doc.text('Microloan Management System • Official Group Portfolio', 20, 32);
+    doc.text(`Generated: ${timestamp}`, 140, 32);
+
+    // 2. Group Context Info
+    doc.setTextColor(15, 23, 42);
+    doc.setFontSize(16);
+    doc.setFont('helvetica', 'bold');
+    doc.text(`CLUSTER: ${group.name}`, 20, 60);
+    
+    doc.setFontSize(10);
+    doc.text(`BARANGAY: ${group.barangay}`, 20, 68);
+    doc.text(`LOAN OFFICER: ${officer?.name || 'N/A'}`, 20, 74);
+    doc.text(`TOTAL MEMBERS: ${groupLoans.length}`, 140, 68);
+    doc.text(`STATUS: ${group.status}`, 140, 74);
+
+    // Dotted line separator
+    doc.setDrawColor(226, 232, 240);
+    doc.setLineDash([1, 1], 0);
+    doc.line(20, 82, 190, 82);
+
+    // 3. Member Table
+    const tableData = groupLoans.map((loan, idx) => {
+        const customer = customers.find(c => c.id === loan.customerId);
+        return [
+            (idx + 1).toString(),
+            customer?.name || 'N/A',
+            loan.loanType,
+            `PHP ${loan.amount.toLocaleString()}`,
+            loan.startDate,
+            loan.status
+        ];
+    });
+
+    autoTable(doc, {
+        startY: 90,
+        head: [['#', 'BORROWER NAME', 'TYPE', 'PRINCIPAL', 'RELEASE DATE', 'STATUS']],
+        body: tableData,
+        theme: 'striped',
+        headStyles: { 
+            fillColor: [79, 70, 229], // indigo-600
+            textColor: [255, 255, 255],
+            fontSize: 10,
+            fontStyle: 'bold'
+        },
+        bodyStyles: { fontSize: 9 },
+        alternateRowStyles: { fillColor: [248, 250, 252] },
+        margin: { left: 20, right: 20 }
+    });
+
+    // 4. Signatures Placeholder
+    const finalY = doc.lastAutoTable.finalY + 30;
+    doc.setFontSize(9);
+    doc.setFont('helvetica', 'bold');
+    doc.text('__________________________', 20, finalY);
+    doc.text('Prepared By (Officer)', 20, finalY + 6);
+    
+    doc.text('__________________________', 130, finalY);
+    doc.text('Approved By (Manager)', 130, finalY + 6);
+
+    const fName = filename || `Report_${group.name.replace(/\s+/g, '_')}.pdf`;
+    doc.save(fName);
 };
