@@ -1,10 +1,13 @@
 import React, { useState } from 'react';
 import { useSystem } from '../context/AppContext';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend, LineChart, Line, XAxis, YAxis, CartesianGrid, BarChart, Bar, RadialBarChart, RadialBar, AreaChart, Area } from 'recharts';
-import { Activity } from 'lucide-react';
+import { Activity, Download } from 'lucide-react';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
+
 
 const Dashboard = () => {
-    const { customers, loans, currentUser, auditLogs } = useSystem();
+    const { customers, loans, currentUser, auditLogs, loanGroups, staffAccounts } = useSystem();
     const [timeFilter, setTimeFilter] = useState('Overall');
 
     // Helper to check if date is within range
@@ -33,6 +36,8 @@ const Dashboard = () => {
 
     // Calculate Metrics based on FILTERED data
     const activeLoansCount = filteredLoans.filter(l => l.status === 'Active' || l.status === 'Pending').length;
+    const totalCBU = customers.reduce((sum, c) => sum + (c.cbuBalance || 0), 0);
+    const totalSD = customers.reduce((sum, c) => sum + (c.sdBalance || 0), 0);
 
     // Revenue Estimation
     const estimatedRevenue = filteredLoans.reduce((sum, loan) => {
@@ -84,6 +89,74 @@ const Dashboard = () => {
         value: value
     })).sort((a, b) => new Date(a.name) - new Date(b.name));
 
+    const exportToDashboardPDF = () => {
+        try {
+            const doc = new jsPDF();
+            const timestamp = new Date().toLocaleString();
+            
+            // Branding Header
+            doc.setFillColor(15, 23, 42); // slate-950
+            doc.rect(0, 0, 210, 40, 'F');
+            
+            doc.setTextColor(255, 255, 255);
+            doc.setFontSize(22);
+            doc.setFont('helvetica', 'bold');
+            doc.text('SERVIAMUS FOUNDATION INC.', 20, 20);
+            
+            doc.setFontSize(10);
+            doc.setFont('helvetica', 'normal');
+            doc.text('Main Dashboard Summary Report', 20, 28);
+            doc.text(`Generated: ${timestamp}`, 140, 28);
+
+            // Filter Focus
+            doc.setTextColor(50, 50, 50);
+            doc.setFontSize(12);
+            doc.text(`Report Period: ${timeFilter}`, 20, 50);
+
+            // Key Metrics Table
+            autoTable(doc, {
+                startY: 60,
+                head: [['Key Metric', 'Performance Value']],
+                body: [
+                    ['Total New Customers', filteredCustomers.length.toString()],
+                    ['Loan Disbursements', filteredLoans.length.toString()],
+                    ['Interest Income (Projected)', `PHP ${estimatedRevenue.toLocaleString()}`],
+                    ['Outstanding Debt (Total)', `PHP ${outstandingDebt.toLocaleString()}`],
+                    ['Current Active Loans', activeLoansCount.toString()]
+                ],
+                theme: 'striped',
+                headStyles: { fillColor: [79, 70, 229] } // indigo-600
+            });
+
+            // Loan Distribution by Status
+            doc.setTextColor(15, 23, 42);
+            doc.setFontSize(12);
+            doc.text('Portfolio Status Breakdown:', 20, doc.lastAutoTable.finalY + 15);
+            
+            autoTable(doc, {
+                startY: doc.lastAutoTable.finalY + 20,
+                head: [['Status', 'Number of Loans']],
+                body: statusData.map(d => [d.name, d.value.toString()]),
+                headStyles: { fillColor: [15, 23, 42] }
+            });
+
+            // Portfolio by Type
+            doc.text('Portfolio by Loan Type:', 20, doc.lastAutoTable.finalY + 15);
+            
+            autoTable(doc, {
+                startY: doc.lastAutoTable.finalY + 20,
+                head: [['Loan Type', 'Total Principal']],
+                body: typeData.map(d => [d.name, `PHP ${d.value.toLocaleString()}`]),
+                headStyles: { fillColor: [15, 23, 42] }
+            });
+
+            doc.save(`Serviamus_Dashboard_Summary_${timeFilter}_${new Date().toISOString().split('T')[0]}.pdf`);
+        } catch (error) {
+            console.error('PDF Generation Error:', error);
+            alert('An error occurred while generating the dashboard PDF.');
+        }
+    };
+
     const Card = ({ title, value, subtext, subtextColor }) => (
         <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-100 hover:shadow-md transition-shadow">
             <h3 className="text-slate-500 text-sm font-medium uppercase tracking-wider mb-2">{title}</h3>
@@ -96,28 +169,41 @@ const Dashboard = () => {
         <div className="space-y-6">
             <div className="flex justify-between items-center">
                 <div>
-                    <h2 className="text-2xl font-bold text-slate-800">Dashboard</h2>
+                    <h2 className="text-2xl font-bold text-slate-800">Main Dashboard</h2>
                     <p className="text-slate-500">Welcome back, {currentUser?.name}</p>
                 </div>
 
-                {/* Time Filter */}
-                <div className="bg-white p-1 rounded-lg border border-slate-200 flex text-sm font-medium">
-                    {['Weekly', 'Monthly', 'Yearly', 'Overall'].map((filter) => (
+                <div className="flex items-center gap-3">
+                    {/* Time Filter */}
+                    <div className="bg-white p-1 rounded-lg border border-slate-200 flex text-sm font-medium">
+                        {['Weekly', 'Monthly', 'Yearly', 'Overall'].map((filter) => (
+                            <button
+                                key={filter}
+                                onClick={() => setTimeFilter(filter)}
+                                className={`px-3 py-1.5 rounded-md transition-all ${timeFilter === filter
+                                    ? 'bg-brand-50 text-brand-700 shadow-sm'
+                                    : 'text-slate-500 hover:text-slate-700 hover:bg-slate-50'
+                                    }`}
+                            >
+                                {filter}
+                            </button>
+                        ))}
+                    </div>
+
+                    <div className="flex gap-2">
                         <button
-                            key={filter}
-                            onClick={() => setTimeFilter(filter)}
-                            className={`px-3 py-1.5 rounded-md transition-all ${timeFilter === filter
-                                ? 'bg-brand-50 text-brand-700 shadow-sm'
-                                : 'text-slate-500 hover:text-slate-700 hover:bg-slate-50'
-                                }`}
+                            onClick={exportToDashboardPDF}
+                            className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg transition-all font-bold shadow-md shadow-indigo-100"
+                            title="Download PDF Summary"
                         >
-                            {filter}
+                            <Download size={18} />
+                            PDF Summary
                         </button>
-                    ))}
+                    </div>
                 </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-6">
                 <Card
                     title="Projected Revenue"
                     value={`₱${estimatedRevenue.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`}
@@ -141,6 +227,18 @@ const Dashboard = () => {
                     value={filteredLoans.length}
                     subtext={`${activeLoansCount} Active`}
                     subtextColor="text-slate-500"
+                />
+                <Card
+                    title="Total CBU"
+                    value={`₱${totalCBU.toLocaleString()}`}
+                    subtext="Capital Build-Up"
+                    subtextColor="text-indigo-600"
+                />
+                <Card
+                    title="Mandatory Savings"
+                    value={`₱${totalSD.toLocaleString()}`}
+                    subtext="SD Balance"
+                    subtextColor="text-brand-600"
                 />
             </div>
 

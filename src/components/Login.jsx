@@ -25,13 +25,16 @@ const Login = () => {
 
             <div className="w-full max-w-md p-8 bg-slate-900/40 backdrop-blur-xl rounded-2xl shadow-2xl border border-slate-800 relative z-10">
                 <div className="text-center mb-8">
-                    <div className="mx-auto w-14 h-14 bg-gradient-to-br from-green-400 to-emerald-600 rounded-2xl flex items-center justify-center shadow-lg shadow-emerald-500/20 mb-6 rotate-3 hover:rotate-0 transition-transform duration-300">
-                        <span className="text-white font-black text-3xl drop-shadow-sm">M</span>
+                    <div className="mx-auto w-14 h-14 bg-gradient-to-br from-indigo-500 to-blue-700 rounded-2xl flex items-center justify-center shadow-lg shadow-indigo-500/20 mb-6 rotate-3 hover:rotate-0 transition-transform duration-300">
+                        <span className="text-white font-black text-3xl drop-shadow-sm">S</span>
                     </div>
-                    <h1 className="text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-white via-green-100 to-green-200 mb-2 tracking-tighter">
-                        MONCADA
+                    <h1 className="text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-white via-indigo-100 to-blue-200 mb-2 tracking-tighter">
+                        SERVIAMUS
                     </h1>
-                    <p className="text-emerald-400 font-bold uppercase tracking-[0.3em] text-xs">Multipurpose Loans</p>
+                    <p className="text-indigo-400 font-bold uppercase tracking-[0.2em] text-[10px] leading-relaxed">
+                        Foundation Inc.<br/>
+                        <span className="text-[9px] text-slate-500 tracking-widest opacity-80 font-medium">Customer Loans Management System</span>
+                    </p>
                 </div>
 
                 <form onSubmit={handleSubmit} className="space-y-6">

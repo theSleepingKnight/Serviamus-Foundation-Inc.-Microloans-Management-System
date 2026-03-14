@@ -1,23 +1,28 @@
 import React, { useState } from 'react';
 import { useSystem } from '../context/AppContext';
-import { UserPlus, UserX } from 'lucide-react';
+import { UserPlus, UserX, MapPin, X } from 'lucide-react';
+import { BARANGAYS } from '../utils/constants';
 import Toast from './ui/Toast';
 
 const Accounts = () => {
     const { staffAccounts, createStaffAccount, updateStaffAccount, deleteStaffAccount, currentUser } = useSystem();
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
     const [editingAccount, setEditingAccount] = useState(null);
-    const [newAccount, setNewAccount] = useState({ name: '', email: '', role: 'officer', password: '' });
+    const [newAccount, setNewAccount] = useState({ name: '', email: '', role: 'officer', password: '', barangays: [] });
     const [formError, setFormError] = useState('');
     const [toast, setToast] = useState(null);
 
     const handleAddSubmit = (e) => {
         e.preventDefault();
         setFormError('');
+        if (newAccount.role === 'officer' && (!newAccount.barangays || newAccount.barangays.length === 0)) {
+            setFormError('Please select at least one barangay for Loan Officers.');
+            return;
+        }
         try {
             createStaffAccount(newAccount);
             setIsAddModalOpen(false);
-            setNewAccount({ name: '', email: '', role: 'officer', password: '' });
+            setNewAccount({ name: '', email: '', role: 'officer', password: '', barangays: [] });
             setToast({ message: 'Staff account created successfully!', type: 'success' });
         } catch (err) {
             setFormError(err.message);
@@ -28,13 +33,18 @@ const Accounts = () => {
         e.preventDefault();
         setFormError('');
         if (!editingAccount) return;
+        if (editingAccount.role === 'officer' && (!editingAccount.barangays || editingAccount.barangays.length === 0)) {
+            setFormError('Please select at least one barangay for Loan Officers.');
+            return;
+        }
 
         try {
             updateStaffAccount(editingAccount.id, {
                 name: editingAccount.name,
                 email: editingAccount.email,
                 role: editingAccount.role,
-                password: editingAccount.password
+                password: editingAccount.password,
+                barangays: editingAccount.barangays || []
             });
             setEditingAccount(null);
             setToast({ message: 'Staff account updated!', type: 'success' });
@@ -96,9 +106,20 @@ const Accounts = () => {
                                 <div className="min-w-0">
                                     <h3 className={`font-bold truncate ${isDisabled ? 'text-slate-500' : 'text-slate-800'}`}>{account.name}</h3>
                                     <p className="text-sm text-slate-500 truncate">{account.email}</p>
-                                    <span className="inline-block mt-1 px-2 py-0.5 rounded text-[10px] uppercase font-bold tracking-wider bg-slate-100 text-slate-600">
-                                        {account.role}
-                                    </span>
+                                    <div className="flex items-center gap-2 mt-1">
+                                        <span className="inline-block px-2 py-0.5 rounded text-[10px] uppercase font-bold tracking-wider bg-slate-100 text-slate-600">
+                                            {account.role}
+                                        </span>
+                                        {account.barangays && account.barangays.length > 0 && (
+                                            <div className="flex flex-wrap gap-1">
+                                                {account.barangays.map(b => (
+                                                    <span key={b} className="inline-block px-2 py-0.5 rounded text-[10px] font-medium bg-emerald-50 text-emerald-600 border border-emerald-100">
+                                                        {b}
+                                                    </span>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </div>
                                 </div>
                             </div>
 
@@ -198,6 +219,48 @@ const Accounts = () => {
                                 </div>
                             </div>
 
+                            {/* Barangay Assignment - Only for Officers */}
+                            {newAccount.role === 'officer' && (
+                                <div>
+                                    <label className="block text-sm font-medium text-slate-700 mb-2 flex items-center gap-2">
+                                        <MapPin size={14} className="text-slate-400" />
+                                        Assigned Barangays <span className="text-red-500">*</span>
+                                    </label>
+                                    <div className="grid grid-cols-2 gap-2 p-3 border border-slate-200 rounded-lg max-h-40 overflow-y-auto bg-slate-50">
+                                        {BARANGAYS.map(b => (
+                                            <label key={b} className="flex items-center gap-2 text-xs text-slate-600 cursor-pointer hover:text-brand-600 transition-colors">
+                                                <input
+                                                    type="checkbox"
+                                                    className="rounded border-slate-300 text-brand-600 focus:ring-brand-500"
+                                                    checked={newAccount.barangays?.includes(b)}
+                                                    onChange={e => {
+                                                        const updatedB = e.target.checked
+                                                            ? [...(newAccount.barangays || []), b]
+                                                            : (newAccount.barangays || []).filter(item => item !== b);
+                                                        setNewAccount({ ...newAccount, barangays: updatedB });
+                                                    }}
+                                                />
+                                                {b}
+                                            </label>
+                                        ))}
+                                    </div>
+                                    <div className="mt-2 flex flex-wrap gap-1">
+                                        {newAccount.barangays?.map(b => (
+                                            <span key={b} className="inline-flex items-center gap-1 px-2 py-0.5 bg-brand-50 text-brand-700 text-[10px] font-medium rounded-full border border-brand-100">
+                                                {b}
+                                                <button 
+                                                    type="button"
+                                                    onClick={() => setNewAccount({ ...newAccount, barangays: newAccount.barangays.filter(item => item !== b) })}
+                                                    className="hover:text-red-500"
+                                                >
+                                                    <X size={10} />
+                                                </button>
+                                            </span>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+
                             <div className="flex gap-3 mt-6">
                                 <button
                                     type="button"
@@ -277,6 +340,48 @@ const Accounts = () => {
                                     </button>
                                 </div>
                             </div>
+
+                            {/* Barangay Assignment - Only for Officers */}
+                            {editingAccount.role === 'officer' && (
+                                <div>
+                                    <label className="block text-sm font-medium text-slate-700 mb-2 flex items-center gap-2">
+                                        <MapPin size={14} className="text-slate-400" />
+                                        Assigned Barangays <span className="text-red-500">*</span>
+                                    </label>
+                                    <div className="grid grid-cols-2 gap-2 p-3 border border-slate-200 rounded-lg max-h-40 overflow-y-auto bg-slate-50">
+                                        {BARANGAYS.map(b => (
+                                            <label key={b} className="flex items-center gap-2 text-xs text-slate-600 cursor-pointer hover:text-brand-600 transition-colors">
+                                                <input
+                                                    type="checkbox"
+                                                    className="rounded border-slate-300 text-brand-600 focus:ring-brand-500"
+                                                    checked={editingAccount.barangays?.includes(b)}
+                                                    onChange={e => {
+                                                        const updatedB = e.target.checked
+                                                            ? [...(editingAccount.barangays || []), b]
+                                                            : (editingAccount.barangays || []).filter(item => item !== b);
+                                                        setEditingAccount({ ...editingAccount, barangays: updatedB });
+                                                    }}
+                                                />
+                                                {b}
+                                            </label>
+                                        ))}
+                                    </div>
+                                    <div className="mt-2 flex flex-wrap gap-1">
+                                        {editingAccount.barangays?.map(b => (
+                                            <span key={b} className="inline-flex items-center gap-1 px-2 py-0.5 bg-brand-50 text-brand-700 text-[10px] font-medium rounded-full border border-brand-100">
+                                                {b}
+                                                <button 
+                                                    type="button"
+                                                    onClick={() => setEditingAccount({ ...editingAccount, barangays: editingAccount.barangays.filter(item => item !== b) })}
+                                                    className="hover:text-red-500"
+                                                >
+                                                    <X size={10} />
+                                                </button>
+                                            </span>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
 
                             <div className="flex gap-3 mt-6">
                                 <button

@@ -1,28 +1,61 @@
 export const USERS = [
     { id: 'admin1', email: 'admin@test.com', name: 'Juan Dela Cruz', role: 'admin', password: 'password' },
-    { id: 'officer1', email: 'officer@test.com', name: 'Maria Santos', role: 'officer', password: 'password' },
+    { id: 'officer1', email: 'officer@test.com', name: 'Maria Santos', role: 'officer', password: 'password', barangays: ['San Jose', 'San Pedro', 'Santo Niño'] },
+    { id: 'officer2', email: 'officer2@test.com', name: 'Ricardo Dalisay', role: 'officer', password: 'password', barangays: ['Balangasan', 'Balintawak', 'Buenavista'] },
     { id: 'cashier1', email: 'cashier@test.com', name: 'Jose Rizal', role: 'cashier', password: 'password' },
 ];
 
 export const INITIAL_CUSTOMERS = [
-    { id: 'c1', name: 'Francisco Baltazar', email: 'kiko@example.com', phone: '0917-123-4567', status: 'Active', joinedDate: '2023-01-15', address: 'Tondo, Manila' },
-    { id: 'c2', name: 'Gabriela Silang', email: 'gabby@example.com', phone: '0918-234-5678', status: 'Active', joinedDate: '2023-02-20', address: 'Vigan, Ilocos Sur' },
-    { id: 'c3', name: 'Andres Bonifacio', email: 'andres@example.com', phone: '0919-345-6789', status: 'Disabled', joinedDate: '2023-03-10', address: 'Tondo, Manila' },
-    { id: 'c4', name: 'Melchora Aquino', email: 'tandang.sora@example.com', phone: '0920-456-7890', status: 'Active', joinedDate: '2023-04-05', address: 'Caloocan City' },
-    { id: 'c5', name: 'Emilio Aguinaldo', email: 'emilio@example.com', phone: '0921-567-8901', status: 'Active', joinedDate: '2023-05-12', address: 'Kawit, Cavite' },
+    { id: 'c1', name: 'Baltazar, Francisco', email: 'kiko@example.com', phone: '0917-123-4567', status: 'Active', joinedDate: '2023-01-15', address: 'Tondo, Manila', barangay: 'San Jose' },
+    { id: 'c2', name: 'Silang, Gabriela', email: 'gabby@example.com', phone: '0918-234-5678', status: 'Active', joinedDate: '2023-02-20', address: 'Vigan, Ilocos Sur', barangay: 'San Pedro' },
+    { id: 'c3', name: 'Bonifacio, Andres', email: 'andres@example.com', phone: '0919-345-6789', status: 'Disabled', joinedDate: '2023-03-10', address: 'Tondo, Manila', barangay: 'San Jose' },
+    { id: 'c4', name: 'Aquino, Melchora', email: 'tandang.sora@example.com', phone: '0920-456-7890', status: 'Active', joinedDate: '2023-04-05', address: 'Santo Niño, Pagadian', barangay: 'Santo Niño' },
+    { id: 'c5', name: 'Aguinaldo, Emilio', email: 'emilio@example.com', phone: '0921-567-8901', status: 'Active', joinedDate: '2023-05-12', address: 'Kawit, Cavite', barangay: 'San Jose' },
+    { id: 'c6', name: 'Mabini, Apolinario', email: 'poli@example.com', phone: '0922-678-9012', status: 'Active', joinedDate: '2023-06-18', address: 'Balangasan, Pagadian', barangay: 'Balangasan' },
+];
+
+export const INITIAL_LOAN_GROUPS = [
+    { 
+        id: 'group_1', 
+        name: 'San Jose_Group 1_03_2024', 
+        barangay: 'San Jose', 
+        officerId: 'officer1', 
+        status: 'Active', 
+        loanIds: ['l1', 'l5'],
+        createdAt: '2024-03-01T10:00:00Z'
+    },
+    { 
+        id: 'group_2', 
+        name: 'Santo Niño_Group 1_03_2024', 
+        barangay: 'Santo Niño', 
+        officerId: 'officer1', 
+        status: 'Active', 
+        loanIds: ['l3'],
+        createdAt: '2024-03-10T14:30:00Z'
+    },
+    { 
+        id: 'group_3', 
+        name: 'Balangasan_Group 1_03_2024', 
+        barangay: 'Balangasan', 
+        officerId: 'officer2', 
+        status: 'Active', 
+        loanIds: ['l6'],
+        createdAt: '2024-03-12T09:00:00Z'
+    }
 ];
 
 export const INITIAL_LOANS = [
-    { id: 'l1', customerId: 'c1', loanType: 'Regular Loan', amount: 25000, interestRate: 3, term: 12, status: 'Active', remainingBalance: 21000, startDate: '2023-06-01' },
-    { id: 'l2', customerId: 'c2', loanType: 'Housing Loan', amount: 30000, interestRate: 2, term: 24, status: 'Pending', remainingBalance: 30000, startDate: '2023-07-15' },
-    { id: 'l3', customerId: 'c4', loanType: 'Multi-Purpose Loan', amount: 10000, interestRate: 0, term: 6, status: 'Paid', remainingBalance: 0, startDate: '2023-01-10' },
-    { id: 'l4', customerId: 'c5', loanType: 'Regular Loan', amount: 35000, interestRate: 3.5, term: 18, status: 'Active', remainingBalance: 32000, startDate: '2023-08-20' },
-    { id: 'l5', customerId: 'c1', loanType: 'Multi-Purpose Loan', amount: 5000, interestRate: 0, term: 6, status: 'Pending', remainingBalance: 5000, startDate: '2023-09-01' },
+    { id: 'l1', customerId: 'c1', loanType: 'Regular Loan', amount: 25000, interestRate: 3, term: 12, status: 'Active', remainingBalance: 21000, startDate: '2023-06-01', groupId: 'group_1', officerId: 'officer1' },
+    { id: 'l2', customerId: 'c2', loanType: 'Housing Loan', amount: 30000, interestRate: 2, term: 24, status: 'Active', remainingBalance: 30000, startDate: '2023-07-15', officerId: 'officer1' },
+    { id: 'l3', customerId: 'c4', loanType: 'Multi-Purpose Loan', amount: 10000, interestRate: 0, term: 6, status: 'Active', remainingBalance: 8000, startDate: '2023-01-10', groupId: 'group_2', officerId: 'officer1' },
+    { id: 'l4', customerId: 'c5', loanType: 'Regular Loan', amount: 35000, interestRate: 3.5, term: 18, status: 'Active', remainingBalance: 32000, startDate: '2023-08-20', officerId: 'officer1' },
+    { id: 'l5', customerId: 'c1', loanType: 'Multi-Purpose Loan', amount: 5000, interestRate: 0, term: 6, status: 'Pending', remainingBalance: 5000, startDate: '2023-09-01', groupId: 'group_1', officerId: 'officer1' },
+    { id: 'l6', customerId: 'c6', loanType: 'Regular Loan', amount: 15000, interestRate: 3, term: 12, status: 'Active', remainingBalance: 15000, startDate: '2024-03-15', groupId: 'group_3', officerId: 'officer2' },
 ];
 
 export const INITIAL_TRANSACTIONS = [
     { id: 't1', loanId: 'l1', amount: 4000, date: '2023-07-01', processedBy: 'cashier1' },
-    { id: 't2', loanId: 'l3', amount: 10000, date: '2023-06-15', processedBy: 'cashier1' },
+    { id: 't2', loanId: 'l3', amount: 2000, date: '2023-06-15', processedBy: 'cashier1' },
 ];
 
 export const INITIAL_LOGS = [

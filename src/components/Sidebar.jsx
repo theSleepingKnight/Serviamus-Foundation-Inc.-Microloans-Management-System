@@ -1,13 +1,14 @@
 import React from 'react';
 import { useSystem } from '../context/AppContext';
-import { Home, Users, Wallet, CreditCard, ShieldCheck, LogOut } from 'lucide-react';
+import { Home, Users, Wallet, CreditCard, ShieldCheck, LogOut, BarChart3 } from 'lucide-react';
 
 const Sidebar = ({ activeView, setActiveView, isOpen }) => {
     const { currentUser, logout } = useSystem();
     const role = currentUser?.role;
 
     const menuItems = [
-        { id: 'dashboard', label: 'Dashboard', icon: Home, roles: ['admin', 'officer', 'cashier'] },
+        { id: 'dashboard', label: 'Main Dashboard', icon: Home, roles: ['admin', 'officer', 'cashier'] },
+        { id: 'analytics', label: 'Loans Analytics', icon: BarChart3, roles: ['admin', 'officer'] },
         { id: 'customers', label: 'Customers', icon: Users, roles: ['admin', 'officer'] },
         { id: 'loans', label: 'Loans', icon: Wallet, roles: ['admin', 'officer'] },
         { id: 'payments', label: 'Payments', icon: CreditCard, roles: ['admin', 'officer', 'cashier'] },
@@ -19,12 +20,12 @@ const Sidebar = ({ activeView, setActiveView, isOpen }) => {
     return (
         <aside className={`w-64 bg-slate-950 border-r border-slate-900 flex flex-col h-screen fixed inset-y-0 left-0 z-50 shadow-2xl transform transition-transform duration-300 ease-in-out ${isOpen ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0`}>
             <div className="p-6 border-b border-slate-900 flex items-center gap-3">
-                <div className="bg-gradient-to-br from-green-400 to-emerald-600 w-10 h-10 rounded-xl flex items-center justify-center shadow-lg shadow-emerald-500/20">
-                    <span className="text-white font-black text-xl">M</span>
+                <div className="bg-gradient-to-br from-indigo-500 to-blue-700 w-10 h-10 rounded-xl flex items-center justify-center shadow-lg shadow-indigo-500/20">
+                    <span className="text-white font-black text-xl">S</span>
                 </div>
                 <div>
-                    <h1 className="text-white font-black text-lg tracking-tighter leading-none bg-clip-text text-transparent bg-gradient-to-r from-white to-slate-400">MONCADA</h1>
-                    <p className="text-emerald-500 text-[9px] uppercase tracking-widest font-bold mt-1">Multi-Loans</p>
+                    <h1 className="text-white font-black text-lg tracking-tighter leading-none bg-clip-text text-transparent bg-gradient-to-r from-white to-slate-400">SERVIAMUS</h1>
+                    <p className="text-indigo-400 text-[8px] uppercase tracking-widest font-bold mt-1 leading-tight">Foundation Inc.</p>
                 </div>
             </div>
 

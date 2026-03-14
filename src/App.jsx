@@ -8,12 +8,28 @@ import Customers from './components/Customers';
 import Loans from './components/Loans';
 import Payments from './components/Payments';
 import Accounts from './components/Accounts';
+import Analytics from './components/Analytics';
 
 // AppContent - Internal component to use context
 const AppContent = () => {
     const { currentUser } = useSystem();
-    const [activeView, setActiveView] = React.useState('dashboard');
+    const [activeView, setActiveView] = React.useState(() => {
+        return localStorage.getItem('ms_active_view') || 'dashboard';
+    });
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+
+    // Persist active view
+    React.useEffect(() => {
+        localStorage.setItem('ms_active_view', activeView);
+    }, [activeView]);
+
+    // Reset view to dashboard on logout
+    React.useEffect(() => {
+        if (!currentUser) {
+            localStorage.setItem('ms_active_view', 'dashboard');
+            setActiveView('dashboard');
+        }
+    }, [currentUser]);
 
     if (!currentUser) {
         return <Login />;
@@ -24,6 +40,8 @@ const AppContent = () => {
         switch (activeView) {
             case 'dashboard':
                 return <Dashboard />;
+            case 'analytics':
+                return <Analytics />;
             case 'customers':
                 return <Customers />;
             case 'loans':

@@ -1,22 +1,25 @@
 import React, { useState } from 'react';
 import { useSystem } from '../context/AppContext';
-import { Search, UserPlus, MoreVertical, Edit2, UserX, UserCheck, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Search, UserPlus, MoreVertical, Edit2, UserX, UserCheck, ChevronLeft, ChevronRight, MapPin, ArrowRightLeft } from 'lucide-react';
+import { BARANGAYS } from '../utils/constants';
 import Toast from './ui/Toast';
 
-const ITEMS_PER_PAGE = 5;
+const ITEMS_PER_PAGE = 10;
 
 const Customers = () => {
-    const { customers, toggleCustomerStatus, addNewCustomer, updateCustomer } = useSystem();
+    const { customers, toggleCustomerStatus, addNewCustomer, updateCustomer, loanGroups, loans, transferCustomer } = useSystem();
     const [searchTerm, setSearchTerm] = useState('');
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
     const [editingCustomer, setEditingCustomer] = useState(null);
+    const [transferringCustomer, setTransferringCustomer] = useState(null);
+    const [transferData, setTransferData] = useState({ barangay: '', groupId: '' });
     const [toast, setToast] = useState(null);
     const [currentPage, setCurrentPage] = useState(1);
 
     // New Customer State
     const [newCustomer, setNewCustomer] = useState({
         lastName: '', firstName: '', middleName: '', extension: '',
-        email: '', mobileNumber: '', address: '',
+        email: '', mobileNumber: '', address: '', barangay: '',
         familyRefName: '', familyRefContact: '',
         colleagueRefName: '', colleagueRefContact: ''
     });
@@ -37,8 +40,8 @@ const Customers = () => {
         setFormError('');
 
         // Strict Validation
-        if (!newCustomer.lastName || !newCustomer.firstName || !newCustomer.middleName || !newCustomer.mobileNumber || !newCustomer.address) {
-            setFormError('Please fill in all required personal and contact fields.');
+        if (!newCustomer.lastName || !newCustomer.firstName || !newCustomer.middleName || !newCustomer.mobileNumber || !newCustomer.address || !newCustomer.barangay) {
+            setFormError('Please fill in all required fields, including Barangay.');
             return;
         }
 
@@ -75,7 +78,8 @@ const Customers = () => {
             updateCustomer(editingCustomer.id, {
                 name: editingCustomer.name,
                 email: editingCustomer.email,
-                phone: editingCustomer.phone
+                phone: editingCustomer.phone,
+                barangay: editingCustomer.barangay
             });
             setEditingCustomer(null);
             setToast({ message: 'Customer details updated.', type: 'success' });
@@ -89,6 +93,18 @@ const Customers = () => {
             setToast({ message: `Customer status updated to ${action}d.`, type: 'success' });
         }
     };
+
+    const handleTransferSubmit = (e) => {
+        e.preventDefault();
+        if (transferringCustomer && transferData.barangay) {
+            transferCustomer(transferringCustomer.id, transferData.barangay, transferData.groupId);
+            setTransferringCustomer(null);
+            setTransferData({ barangay: '', groupId: '' });
+            setToast({ message: 'Customer transfer processed successfully.', type: 'success' });
+        }
+    };
+
+    const getCustomerLoan = (id) => loans.find(l => l.customerId === id && (l.status === 'Active' || l.status === 'Pending'));
 
     return (
         <div className="space-y-6">
@@ -125,6 +141,7 @@ const Customers = () => {
                             <tr>
                                 <th className="px-6 py-4">Customer</th>
                                 <th className="px-6 py-4">Contact</th>
+                                <th className="px-6 py-4">Capital & Savings</th>
                                 <th className="px-6 py-4">Joined Date</th>
                                 <th className="px-6 py-4">Status</th>
                                 <th className="px-6 py-4 text-right">Actions</th>
@@ -140,13 +157,31 @@ const Customers = () => {
                                             </div>
                                             <div>
                                                 <p className="font-medium text-slate-900">{customer.name}</p>
-                                                <p className="text-xs text-slate-500">{customer.id}</p>
+                                                <div className="flex items-center gap-1.5 mt-0.5">
+                                                    <span className="text-[10px] bg-slate-100 px-1.5 py-0.5 rounded font-mono text-slate-500">{customer.id}</span>
+                                                    <span className="flex items-center gap-1 text-[10px] text-brand-600 font-medium bg-brand-50 px-1.5 py-0.5 rounded">
+                                                        <MapPin size={10} />
+                                                        {customer.barangay || 'No Barangay'}
+                                                    </span>
+                                                </div>
                                             </div>
                                         </div>
                                     </td>
                                     <td className="px-6 py-4">
                                         <p className="text-slate-700">{customer.email}</p>
                                         <p className="text-xs text-slate-500">{customer.phone}</p>
+                                    </td>
+                                    <td className="px-6 py-4">
+                                        <div className="flex flex-col gap-1">
+                                            <div className="flex items-center justify-between text-[11px]">
+                                                <span className="text-slate-500 font-medium">CBU:</span>
+                                                <span className="text-slate-900 font-bold">₱{Math.round(customer.cbuBalance || 0).toLocaleString()}</span>
+                                            </div>
+                                            <div className="flex items-center justify-between text-[11px]">
+                                                <span className="text-slate-500 font-medium">SD:</span>
+                                                <span className="text-indigo-600 font-bold">₱{Math.round(customer.sdBalance || 0).toLocaleString()}</span>
+                                            </div>
+                                        </div>
                                     </td>
                                     <td className="px-6 py-4 text-slate-600">
                                         {customer.joinedDate}
@@ -169,6 +204,19 @@ const Customers = () => {
                                                 title="Edit"
                                             >
                                                 <Edit2 size={16} />
+                                            </button>
+                                            <button
+                                                onClick={() => {
+                                                    setTransferringCustomer(customer);
+                                                    setTransferData({ 
+                                                        barangay: customer.barangay, 
+                                                        groupId: getCustomerLoan(customer.id)?.groupId || '' 
+                                                    });
+                                                }}
+                                                className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
+                                                title="Transfer"
+                                            >
+                                                <ArrowRightLeft size={16} />
                                             </button>
                                             <button
                                                 onClick={() => handleToggleStatus(customer)}
@@ -287,15 +335,31 @@ const Customers = () => {
                                         />
                                     </div>
                                 </div>
-                                <div>
-                                    <label className="block text-xs font-medium text-slate-700 mb-1">Complete Address <span className="text-red-500">*</span></label>
-                                    <textarea
-                                        required
-                                        rows="2"
-                                        className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-brand-500 outline-none resize-none"
-                                        value={newCustomer.address}
-                                        onChange={e => setNewCustomer({ ...newCustomer, address: e.target.value })}
-                                    ></textarea>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div>
+                                        <label className="block text-xs font-medium text-slate-700 mb-1">Complete Address <span className="text-red-500">*</span></label>
+                                        <textarea
+                                            required
+                                            rows="2"
+                                            className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-brand-500 outline-none resize-none"
+                                            value={newCustomer.address}
+                                            onChange={e => setNewCustomer({ ...newCustomer, address: e.target.value })}
+                                        ></textarea>
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs font-medium text-slate-700 mb-1">Barangay <span className="text-red-500">*</span></label>
+                                        <select
+                                            required
+                                            className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-brand-500 outline-none bg-white"
+                                            value={newCustomer.barangay}
+                                            onChange={e => setNewCustomer({ ...newCustomer, barangay: e.target.value })}
+                                        >
+                                            <option value="">Select Barangay</option>
+                                            {BARANGAYS.map(b => (
+                                                <option key={b} value={b}>{b}</option>
+                                            ))}
+                                        </select>
+                                    </div>
                                 </div>
                             </div>
                             {/* References */}
@@ -396,6 +460,20 @@ const Customers = () => {
                                     onChange={e => setEditingCustomer({ ...editingCustomer, phone: e.target.value })}
                                 />
                             </div>
+                            <div>
+                                <label className="block text-sm font-medium text-slate-700 mb-1">Barangay</label>
+                                <select
+                                    required
+                                    className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-brand-500 outline-none bg-white"
+                                    value={editingCustomer.barangay}
+                                    onChange={e => setEditingCustomer({ ...editingCustomer, barangay: e.target.value })}
+                                >
+                                    <option value="">Select Barangay</option>
+                                    {BARANGAYS.map(b => (
+                                        <option key={b} value={b}>{b}</option>
+                                    ))}
+                                </select>
+                            </div>
                             <div className="flex gap-3 mt-6">
                                 <button
                                     type="button"
@@ -409,6 +487,82 @@ const Customers = () => {
                                     className="flex-1 py-2 bg-brand-600 hover:bg-brand-700 text-white font-medium rounded-lg transition-colors shadow-sm"
                                 >
                                     Save Changes
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
+            {/* Transfer Modal */}
+            {transferringCustomer && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+                    <div className="bg-white rounded-xl shadow-xl w-full max-w-md p-6 animate-in fade-in zoom-in duration-200">
+                        <div className="flex items-center gap-3 mb-6">
+                            <div className="w-10 h-10 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center">
+                                <ArrowRightLeft size={20} />
+                            </div>
+                            <div>
+                                <h3 className="text-lg font-bold text-slate-900">Transfer Customer</h3>
+                                <p className="text-xs text-slate-500">Relocate {transferringCustomer.name}</p>
+                            </div>
+                        </div>
+
+                        {getCustomerLoan(transferringCustomer.id) && (
+                            <div className="mb-6 p-3 bg-amber-50 border border-amber-200 rounded-lg">
+                                <p className="text-xs font-bold text-amber-800 flex items-center gap-2">
+                                    ⚠️ Active Loan Detected
+                                </p>
+                                <p className="text-[10px] text-amber-700 mt-1">
+                                    This customer has an active loan. Transferring will also relocate the loan and update the assigned officer.
+                                </p>
+                            </div>
+                        )}
+
+                        <form onSubmit={handleTransferSubmit} className="space-y-4">
+                            <div>
+                                <label className="block text-xs font-semibold text-slate-500 uppercase mb-1">Target Barangay</label>
+                                <select
+                                    required
+                                    className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-brand-500 outline-none bg-white text-sm"
+                                    value={transferData.barangay}
+                                    onChange={e => setTransferData({ ...transferData, barangay: e.target.value, groupId: '' })}
+                                >
+                                    {BARANGAYS.map(b => (
+                                        <option key={b} value={b}>{b}</option>
+                                    ))}
+                                </select>
+                            </div>
+
+                            <div>
+                                <label className="block text-xs font-semibold text-slate-500 uppercase mb-1">Target Group (Optional)</label>
+                                <select
+                                    className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-brand-500 outline-none bg-white text-sm"
+                                    value={transferData.groupId}
+                                    onChange={e => setTransferData({ ...transferData, groupId: e.target.value })}
+                                >
+                                    <option value="">No Group (Independent)</option>
+                                    {loanGroups
+                                        .filter(g => g.barangay === transferData.barangay && g.status === 'Active' && g.loanIds.length < 5)
+                                        .map(g => (
+                                            <option key={g.id} value={g.id}>{g.name} ({g.loanIds.length}/5)</option>
+                                        ))
+                                    }
+                                </select>
+                            </div>
+
+                            <div className="flex gap-3 mt-8">
+                                <button
+                                    type="button"
+                                    onClick={() => setTransferringCustomer(null)}
+                                    className="flex-1 py-2 text-slate-600 font-medium hover:bg-slate-50 rounded-lg transition-colors border border-slate-200"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    type="submit"
+                                    className="flex-1 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-lg transition-colors shadow-sm"
+                                >
+                                    Confirm Transfer
                                 </button>
                             </div>
                         </form>

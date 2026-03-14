@@ -4,6 +4,13 @@ export const LOAN_TYPES = {
     MULTI: { label: 'Multi-Purpose Loan', rate: 0, max: 15000, fee: 2.5 }
 };
 
+export const BARANGAYS = [
+    'Balangasan', 'Balintawak', 'Banale', 'Buenavista', 'Dao', 
+    'Dumagoc', 'Gatas', 'Kawit', 'Lumbia', 'Napolan', 
+    'San Francisco', 'San Jose', 'San Pedro', 'Santa Lucia', 
+    'Santa Maria', 'Santiago', 'Santo Niño', 'Tiguma', 'Tuburan'
+];
+
 export const ALERTS = {
     CONFIRM_DELETE: 'Are you sure you want to delete this record?',
     CONFIRM_ACTION: 'Are you sure you want to proceed?',

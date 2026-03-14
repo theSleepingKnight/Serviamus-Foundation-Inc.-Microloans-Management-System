@@ -1,16 +1,18 @@
 import React, { useState } from 'react';
 import { useSystem } from '../context/AppContext';
-import { Search, CreditCard, DollarSign, History, FileText, CheckCircle } from 'lucide-react';
+import { Search, CreditCard, DollarSign, History, FileText, CheckCircle, ChevronLeft, ChevronRight } from 'lucide-react';
 import Toast from './ui/Toast';
 
+const ITEMS_PER_PAGE = 10;
 const Payments = () => {
-    const { loans, customers, canAccess, processPayment, transactions } = useSystem();
+    const { loans, customers, canAccess, processPayment, transactions, loanGroups } = useSystem();
 
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedLoan, setSelectedLoan] = useState(null);
     const [paymentAmount, setPaymentAmount] = useState('');
     const [historyLoan, setHistoryLoan] = useState(null);
     const [toast, setToast] = useState(null);
+    const [currentPage, setCurrentPage] = useState(1);
 
     const isCashier = canAccess('cashier') || canAccess('admin'); // Admins can also process
 
@@ -21,6 +23,9 @@ const Payments = () => {
             l.id.toLowerCase().includes(searchTerm.toLowerCase());
         return matchesSearch && l.status === 'Active';
     });
+
+    const totalPages = Math.ceil(filteredLoans.length / ITEMS_PER_PAGE);
+    const displayedLoans = filteredLoans.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
 
     const handlePayment = (e) => {
         e.preventDefault();
@@ -70,15 +75,24 @@ const Payments = () => {
                             <tr>
                                 <th className="px-6 py-4">Loan ID</th>
                                 <th className="px-6 py-4">Customer</th>
-                                <th className="px-6 py-4">Balance</th>
+                                <th className="px-6 py-4">Outstanding Bal.</th>
                                 <th className="px-6 py-4 text-right">Actions</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100">
-                            {filteredLoans.map((loan) => (
+                            {displayedLoans.map((loan) => (
                                 <tr key={loan.id} className="hover:bg-slate-50/50 transition-colors">
                                     <td className="px-6 py-4 font-mono text-slate-500 text-xs">{loan.id}</td>
-                                    <td className="px-6 py-4 font-medium text-slate-900">{getCustomerName(loan.customerId)}</td>
+                                    <td className="px-6 py-4">
+                                        <div className="flex flex-col">
+                                            <span className="font-medium text-slate-900">{getCustomerName(loan.customerId)}</span>
+                                            {loan.groupId && (
+                                                <span className="text-[10px] text-slate-400 font-mono">
+                                                    Group: {loanGroups.find(g => g.id === loan.groupId)?.name}
+                                                </span>
+                                            )}
+                                        </div>
+                                    </td>
                                     <td className="px-6 py-4 text-slate-700 font-medium">
                                         ₱{loan.remainingBalance.toLocaleString()}
                                     </td>
@@ -114,6 +128,28 @@ const Payments = () => {
                         </tbody>
                     </table>
                 </div>
+                {/* Pagination Controls */}
+                {totalPages > 1 && (
+                    <div className="p-4 border-t border-slate-100 flex justify-between items-center bg-slate-50/50">
+                        <span className="text-xs text-slate-500">Page {currentPage} of {totalPages}</span>
+                        <div className="flex gap-2">
+                            <button
+                                disabled={currentPage === 1}
+                                onClick={() => setCurrentPage(p => p - 1)}
+                                className="p-1.5 rounded-lg border border-slate-200 text-slate-500 hover:bg-white disabled:opacity-50"
+                            >
+                                <ChevronLeft size={16} />
+                            </button>
+                            <button
+                                disabled={currentPage === totalPages}
+                                onClick={() => setCurrentPage(p => p + 1)}
+                                className="p-1.5 rounded-lg border border-slate-200 text-slate-500 hover:bg-white disabled:opacity-50"
+                            >
+                                <ChevronRight size={16} />
+                            </button>
+                        </div>
+                    </div>
+                )}
             </div>
 
             {/* Payment Modal */}
