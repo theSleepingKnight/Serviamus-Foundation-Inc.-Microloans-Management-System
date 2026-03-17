@@ -4,51 +4,55 @@ A high-fidelity, comprehensive Customer and Loans Management System designed for
 
 ## 🚀 Key Features
 
-### 1. **Executive Dashboard**
-   - **Real-Time KPI Tracking**: Instant visibility of Projected Revenue, Outstanding Debt, and Growth Metrics.
-   - **Dynamic Data Visualization**:
-     - **Revenue Trends**: Historical performance tracking via interactive area charts.
-     - **Portfolio Health**: Visual breakdown of loan statuses (Active, Pending, Paid, Defaulted).
-     - **Loan Distribution**: Categorical analysis of loan types.
-   - **Temporal Filtering**: Switch between Weekly, Monthly, Yearly, and All-Time views to analyze trends.
+### 1. **Role-Based Access Control (RBAC)**
+   - **Admin**: Full system control, including fee settings, staff management, and all financial overrides.
+   - **Loan Officer**: Geographic-focused access. Can manage members, create loans, and approve applications within their assigned **Barangays**.
+   - **Cashier**: Specialized **Collection Dashboard** view. Handles payment processing and fund disbursements without access to member data modification.
 
-### 2. **Structured Group Management**
+### 2. **Verified Disbursement Workflow**
+   - **Modern Lifecycle**: Moves from `Pending` → `Approved` (Officer/Admin) → `Active` (Cashier Disbursed).
+   - **Late-Start Interest**: The repayment schedule and interest calculation only begin the moment the Cashier marks the loan as "Disbursed" and releases the funds.
+   - **Pending Releases Monitor**: A dedicated queue for Cashiers to see exactly which loans are ready for cash release.
+
+### 3. **Smart Overdue & Delinquency Monitoring**
+   - **Overdue Monitor**: A specialized tab identifying loans with no payments for >7 days.
+   - **Transaction Review**: Quick-access modals to review a delinquent member's full payment history directly from the monitor.
+   - **Visual Warnings**: Individual members are highlighted in **Red/Orange** with "DELINQUENT" warnings in group lists to support joint-liability models.
+
+### 4. **Executive & Collection Dashboards**
+   - **Executive (Admin/Officer)**: Real-time KPI tracking of Projected Revenue, Outstanding Debt, and Growth Metrics.
+   - **Collection (Cashier)**: Tactical view of Today's Total Collections, Count of Payments, and Pending Disbursements.
+
+### 5. **Structured Group Management**
    - **Geographic Organization**: Loans are organized by **Barangays** and specific **Groups**.
-   - **Officer Assignment**: Dedicated Loan Officers assigned to specific groups for better accountability.
-   - **Smart Archiving**: Custom workflow to "Archive" completed loan groups, ghosting them from active lists while preserving historical data.
-   - **Status Badging**: Visual indicators for Active, Pending, and Archived groups to prevent operational confusion.
+   - **Officer Capacity**: Visual indicators of how many slots are remaining in a group (e.g., 4/5 slots used).
 
-### 3. **Sophisticated Loan Origination**
-   - **Multi-Product Support**:
-     - **Regular Loans**: 3% Monthly interest rate.
-     - **Housing Loans**: 2% Monthly interest rate.
-     - **Multi-Purpose Loans (MPL)**: 0% interest with a **2.5% upfront processing fee** deduction.
-   - **Automated Calculations**: Instant generation of net proceeds, processing fees, and weekly amortization schedules.
-   - **Approval Workflow**: Dual-stage verification for pending applications.
+### 6. **Collection Desk (Payments)**
+   - **Batch Processing**: High-efficiency "Payment Sheet" for processing entire group collections in a single workflow.
+   - **Individual Tracking**: Precision processing for specific member payments and immediate receipt generation.
 
-### 4. **Enhanced Customer Management**
-   - **Summary Intelligence**: Dash-header featuring Total Members, Active Accounts, Total CBU (Capital Build-Up), and Total SD (Savings Deposit) stats.
-   - **Barangay Filtering**: Optimized search functionality with geographic filtering.
-   - **Full Profile View**: Detailed customer dossiers including financial standing, family/work references, and historical loan links.
-   - **Transfer Logic**: Ability to relocate customers between barangays and groups, automatically updating associated loan officers.
+## 📖 Quick Start Guide
 
-### 5. **Collection Desk (Payments)**
-   - **Dual Collection Modes**:
-     - **Individual**: Precision processing for specific member payments.
-     - **Group Batch**: High-efficiency "Payment Sheet" for processing entire group collections in a single workflow.
-   - **Daily Metrics**: Tracking of today's total collections and receipts issued.
-   - **Payment History**: Immutable ledgers for every loan, tracking payment dates and processing staff.
+### For Loan Officers
+1. **Register Member**: Go to the **Customers** tab and click "Register New Customer".
+2. **Create Loan**: Once registered, go to **Loans**, click "New Loan", and assign them to a Group in your Barangay.
+3. **Approval**: After verification, mark the application as **Approved**. It will now move to the Cashier's queue.
 
-### 6. **System Configuration**
-   - **Dynamic Parameters**: Real-time updating of system fees (CBU, Savings, Penalties, and Insurances) via the Administrative Settings.
+### For Cashiers
+1. **Disbursement**: Go to **Payments**. Look at the "Pending Disbursements" section. Click "Disburse Funds" when the borrower is ready.
+2. **Payment**: Select a member or group, enter the amount, and click "Process Payment". The system updates the remaining balance instantly.
+
+### For Admins
+1. **System Health**: Monitor the **Dashboard** for overall growth trends.
+2. **Settings**: Use the gear icon in the **Loans** tab to adjust CBU, Savings, or Admin fee percentages.
 
 ## 🛠 Tech Stack
 
 - **Core**: React 18 (Vite)
-- **Styling**: Vanilla CSS + Tailwind CSS (Custom Design System with Glassmorphism)
+- **Styling**: Vanilla CSS + Tailwind CSS (Custom Design System)
 - **Icons**: Lucide React
 - **Charts**: Recharts
-- **State Management**: React Context API (Centralized Business Logic)
+- **State Management**: React Context API
 
 ## 📦 Getting Started
 
@@ -60,7 +64,7 @@ A high-fidelity, comprehensive Customer and Loans Management System designed for
 
 1. **Clone & Navigate**
    ```bash
-   git clone <repository-url>
+   git clone https://github.com/theSleepingKnight/Serviamus-Foundation-Inc.-Microloans-Management-System.git
    cd microloan-servicing
    ```
 
