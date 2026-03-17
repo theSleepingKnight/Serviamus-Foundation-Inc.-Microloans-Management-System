@@ -5,7 +5,7 @@ import Toast from './ui/Toast';
 
 const ITEMS_PER_PAGE = 10;
 const Payments = () => {
-    const { loans, customers, canAccess, processPayment, transactions, loanGroups } = useSystem();
+    const { loans, customers, canAccess, processPayment, transactions, loanGroups, disburseLoan } = useSystem();
 
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedLoan, setSelectedLoan] = useState(null);
@@ -127,6 +127,55 @@ const Payments = () => {
                     </div>
                 </div>
             </div>
+
+            {/* Pending Disbursements Section (New) */}
+            {isCashier && loans.filter(l => l.status === 'Approved').length > 0 && (
+                <div className="bg-amber-50 rounded-[2rem] border border-amber-100 p-8 shadow-sm">
+                    <div className="flex justify-between items-center mb-6">
+                        <div>
+                            <h3 className="text-xl font-black text-amber-900 leading-none mb-1">Pending Disbursements</h3>
+                            <p className="text-xs font-bold text-amber-700 uppercase tracking-widest">Awaiting Cash Release</p>
+                        </div>
+                        <div className="px-4 py-2 bg-amber-200/50 rounded-xl text-amber-900 text-xs font-black">
+                            {loans.filter(l => l.status === 'Approved').length} RELEASE(S) READY
+                        </div>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        {loans.filter(l => l.status === 'Approved').map(loan => {
+                            const customer = customers.find(c => c.id === loan.customerId);
+                            return (
+                                <div key={loan.id} className="bg-white p-5 rounded-3xl border border-amber-200 shadow-sm flex flex-col gap-4">
+                                    <div className="flex justify-between items-start">
+                                        <div>
+                                            <p className="text-[10px] font-black text-slate-400 mb-1">ID: #{loan.id}</p>
+                                            <h4 className="text-lg font-black text-slate-900 leading-tight truncate px-1">{customer?.name}</h4>
+                                        </div>
+                                        <span className="text-[10px] font-black bg-indigo-50 text-indigo-600 px-2 py-0.5 rounded-md border border-indigo-100 uppercase">
+                                            {loan.loanType}
+                                        </span>
+                                    </div>
+                                    <div className="bg-slate-50 p-3 rounded-2xl border border-slate-100">
+                                        <p className="text-[10px] font-black text-slate-400 uppercase mb-0.5 px-1">Principal Amount</p>
+                                        <p className="text-xl font-black text-slate-900 px-1">₱{loan.amount.toLocaleString()}</p>
+                                    </div>
+                                    <button 
+                                        onClick={() => {
+                                            if (window.confirm(`Release ₱${loan.amount.toLocaleString()} to ${customer?.name}? This will start the repayment cycle.`)) {
+                                                disburseLoan(loan.id);
+                                                setToast({ message: `Loan disbursed to ${customer?.name}!`, type: 'success' });
+                                            }
+                                        }}
+                                        className="w-full py-3 bg-amber-600 hover:bg-amber-700 text-white font-black rounded-2xl transition-all shadow-lg shadow-amber-200 flex items-center justify-center gap-2"
+                                    >
+                                        <CheckCircle size={18} />
+                                        Disburse Funds
+                                    </button>
+                                </div>
+                            );
+                        })}
+                    </div>
+                </div>
+            )}
 
             {viewMode === 'individual' ? (
                 <div className="bg-white rounded-[2rem] shadow-xl border border-slate-100 overflow-hidden">

@@ -9,6 +9,7 @@ import Loans from './components/Loans';
 import Payments from './components/Payments';
 import Accounts from './components/Accounts';
 import Analytics from './components/Analytics';
+import Overdue from './components/Overdue';
 
 // AppContent - Internal component to use context
 const AppContent = () => {
@@ -48,6 +49,8 @@ const AppContent = () => {
                 return <Loans />;
             case 'payments':
                 return <Payments />;
+            case 'overdue':
+                return <Overdue />;
             case 'accounts':
                 return <Accounts />;
             default:

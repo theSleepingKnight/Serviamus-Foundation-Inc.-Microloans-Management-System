@@ -7,7 +7,7 @@ import autoTable from 'jspdf-autotable';
 
 
 const Dashboard = () => {
-    const { customers, loans, currentUser, auditLogs, loanGroups, staffAccounts } = useSystem();
+    const { customers, loans, currentUser, auditLogs, loanGroups, staffAccounts, transactions } = useSystem();
     const [timeFilter, setTimeFilter] = useState('Overall');
 
     // Helper to check if date is within range
@@ -157,20 +157,135 @@ const Dashboard = () => {
         }
     };
 
-    const Card = ({ title, value, subtext, subtextColor }) => (
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-100 hover:shadow-md transition-shadow">
-            <h3 className="text-slate-500 text-sm font-medium uppercase tracking-wider mb-2">{title}</h3>
-            <p className="text-2xl font-bold text-slate-900 mb-1">{value}</p>
-            {subtext && <p className={`text-xs ${subtextColor || 'text-slate-400'}`}>{subtext}</p>}
+    const isCashier = currentUser?.role === 'cashier';
+
+    // Stats for Cashier Dashboard
+    const todayStr = new Date().toISOString().split('T')[0];
+    const todayTransactions = (isCashier ? transactions : transactions).filter(t => t.date === todayStr);
+    const todayCollected = todayTransactions.reduce((sum, t) => sum + t.amount, 0);
+    const pendingDisbursements = loans.filter(l => l.status === 'Approved');
+
+    const Card = ({ title, value, subtext, subtextColor, icon: Icon }) => (
+        <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 hover:shadow-md transition-all hover:translate-y-[-2px] group">
+            <div className="flex justify-between items-start mb-4">
+                <h3 className="text-slate-500 text-[10px] font-black uppercase tracking-widest">{title}</h3>
+                {Icon && <Icon size={18} className="text-slate-300 group-hover:text-brand-500 transition-colors" />}
+            </div>
+            <p className="text-2xl font-black text-slate-900 mb-1">{value}</p>
+            {subtext && <p className={`text-xs font-bold ${subtextColor || 'text-slate-400'}`}>{subtext}</p>}
         </div>
     );
 
+    if (isCashier) {
+        return (
+            <div className="space-y-6">
+                <div>
+                    <h2 className="text-2xl font-black text-slate-900 tracking-tight">Collection Dashboard</h2>
+                    <p className="text-sm font-medium text-slate-500">Overview for {currentUser?.name} • {todayStr}</p>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                    <Card 
+                        title="Today's Total" 
+                        value={`₱${todayCollected.toLocaleString()}`} 
+                        subtext={`${todayTransactions.length} Payments`}
+                        subtextColor="text-emerald-500"
+                        icon={Activity}
+                    />
+                    <Card 
+                        title="Pending Releases" 
+                        value={pendingDisbursements.length} 
+                        subtext="Ready for disbursement"
+                        subtextColor="text-amber-500"
+                        icon={Activity}
+                    />
+                    <Card 
+                        title="Active Portfolio" 
+                        value={loans.filter(l => l.status === 'Active').length} 
+                        subtext="Ongoing loans"
+                        subtextColor="text-indigo-500"
+                        icon={Activity}
+                    />
+                    <Card 
+                        title="Recent Activity" 
+                        value={auditLogs.filter(l => l.user === currentUser?.name).length} 
+                        subtext="Actions today"
+                        subtextColor="text-slate-500"
+                        icon={Activity}
+                    />
+                </div>
+
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <div className="lg:col-span-2 bg-white p-8 rounded-[2rem] border border-slate-100 shadow-sm">
+                        <h3 className="text-lg font-black text-slate-900 mb-6 flex items-center gap-2">
+                            <Activity size={20} className="text-brand-600" />
+                            Recent Collections
+                        </h3>
+                        <div className="overflow-x-auto">
+                            <table className="w-full text-sm text-left">
+                                <thead className="text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-50">
+                                    <tr>
+                                        <th className="pb-4">Loan ID</th>
+                                        <th className="pb-4">Borrower</th>
+                                        <th className="pb-4 text-right">Amount</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-slate-50">
+                                    {todayTransactions.slice(0, 5).map(t => {
+                                        const loan = loans.find(l => l.id === t.loanId);
+                                        const customer = customers.find(c => c.id === loan?.customerId);
+                                        return (
+                                            <tr key={t.id} className="hover:bg-slate-50/50 transition-colors">
+                                                <td className="py-4 font-mono text-xs text-slate-400">#{t.loanId}</td>
+                                                <td className="py-4 font-bold text-slate-800">{customer?.name}</td>
+                                                <td className="py-4 text-right font-black text-emerald-600">₱{t.amount.toLocaleString()}</td>
+                                            </tr>
+                                        );
+                                    })}
+                                    {todayTransactions.length === 0 && (
+                                        <tr>
+                                            <td colSpan="3" className="py-8 text-center text-slate-400 font-medium italic">No collections today.</td>
+                                        </tr>
+                                    )}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div className="bg-white p-8 rounded-[2rem] border border-slate-100 shadow-sm">
+                        <h3 className="text-lg font-black text-slate-900 mb-6 flex items-center gap-2">
+                            <Activity size={20} className="text-brand-600" />
+                            To Release
+                        </h3>
+                        <div className="space-y-4">
+                            {pendingDisbursements.slice(0, 5).map(l => {
+                                const customer = customers.find(c => c.id === l.customerId);
+                                return (
+                                    <div key={l.id} className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                                        <div>
+                                            <p className="text-xs font-black text-slate-900 uppercase">{customer?.name}</p>
+                                            <p className="text-[10px] font-bold text-slate-400">₱{l.amount.toLocaleString()} • {l.loanType}</p>
+                                        </div>
+                                        <span className="text-[10px] font-black text-amber-500 uppercase tracking-widest bg-amber-50 px-2 py-0.5 rounded-md">Approved</span>
+                                    </div>
+                                );
+                            })}
+                            {pendingDisbursements.length === 0 && (
+                                <p className="text-center py-8 text-slate-400 font-medium italic">No pending disbursements.</p>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
     return (
         <div className="space-y-6">
-            <div className="flex justify-between items-center">
+            <div className="flex justify-between items-center text-left">
                 <div>
-                    <h2 className="text-2xl font-bold text-slate-800">Main Dashboard</h2>
-                    <p className="text-slate-500">Welcome back, {currentUser?.name}</p>
+                    <h2 className="text-2xl font-black text-slate-800 tracking-tight underline">Main Dashboard</h2>
+                    <p className="text-slate-500 font-medium">Welcome back, {currentUser?.name}</p>
                 </div>
 
                 <div className="flex items-center gap-3">
@@ -181,7 +296,7 @@ const Dashboard = () => {
                                 key={filter}
                                 onClick={() => setTimeFilter(filter)}
                                 className={`px-3 py-1.5 rounded-md transition-all ${timeFilter === filter
-                                    ? 'bg-brand-50 text-brand-700 shadow-sm'
+                                    ? 'bg-brand-50 text-brand-700 shadow-sm font-bold'
                                     : 'text-slate-500 hover:text-slate-700 hover:bg-slate-50'
                                     }`}
                             >
@@ -244,8 +359,8 @@ const Dashboard = () => {
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 {/* Loan Volume Chart */}
-                <div className="lg:col-span-2 bg-white p-6 rounded-xl shadow-sm border border-slate-100">
-                    <h3 className="text-lg font-bold text-slate-800 mb-4">Loan Volume ({timeFilter})</h3>
+                <div className="lg:col-span-2 bg-white p-8 rounded-[2rem] shadow-sm border border-slate-100">
+                    <h3 className="text-lg font-black text-slate-800 mb-6">Loan Volume ({timeFilter})</h3>
                     <div className="h-64">
                         <ResponsiveContainer width="100%" height="100%">
                             <AreaChart data={performanceData}>
@@ -272,30 +387,30 @@ const Dashboard = () => {
                                     tickFormatter={(value) => `₱${value / 1000}k`}
                                 />
                                 <Tooltip
-                                    contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                                    contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }}
                                     formatter={(value) => [`₱${value.toLocaleString()}`, 'Amount']}
                                     labelFormatter={(label) => new Date(label).toLocaleDateString()}
                                 />
-                                <Area type="monotone" dataKey="value" stroke="#8b5cf6" strokeWidth={2} fillOpacity={1} fill="url(#colorValue)" />
+                                <Area type="monotone" dataKey="value" stroke="#8b5cf6" strokeWidth={3} fillOpacity={1} fill="url(#colorValue)" />
                             </AreaChart>
                         </ResponsiveContainer>
                     </div>
                 </div>
 
                 {/* Recent Activity Log */}
-                <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-100 flex flex-col">
-                    <div className="flex items-center gap-2 mb-4">
+                <div className="bg-white p-8 rounded-[2rem] shadow-sm border border-slate-100 flex flex-col">
+                    <div className="flex items-center gap-2 mb-6">
                         <Activity size={20} className="text-brand-600" />
-                        <h3 className="text-lg font-bold text-slate-800">Recent Activity</h3>
+                        <h3 className="text-lg font-black text-slate-800 tracking-tight">System Audit Log</h3>
                     </div>
-                    <div className="flex-1 overflow-y-auto pr-2 max-h-64 space-y-4">
+                    <div className="flex-1 overflow-y-auto pr-2 max-h-[300px] space-y-4 custom-scrollbar">
                         {auditLogs && auditLogs.length > 0 ? (
-                            auditLogs.slice(0, 10).map((log) => (
-                                <div key={log.id} className="flex gap-3 text-sm border-b border-slate-50 pb-3 last:border-0 last:pb-0">
-                                    <div className="mt-1 w-2 h-2 rounded-full bg-slate-300 shrink-0"></div>
+                            auditLogs.map((log) => (
+                                <div key={log.id} className="flex gap-3 text-sm border-b border-slate-50 pb-4 last:border-0 last:pb-0">
+                                    <div className="mt-1 w-2 h-2 rounded-full bg-slate-200 shrink-0"></div>
                                     <div>
-                                        <p className="text-slate-800 font-medium">{log.action}</p>
-                                        <p className="text-xs text-slate-500">
+                                        <p className="text-slate-800 font-bold leading-tight mb-1">{log.action}</p>
+                                        <p className="text-[10px] font-black uppercase text-slate-400">
                                             {log.user} • {new Date(log.timestamp).toLocaleDateString()}
                                         </p>
                                     </div>
@@ -310,8 +425,8 @@ const Dashboard = () => {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {/* Status Distribution */}
-                <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-100">
-                    <h3 className="text-lg font-bold text-slate-800 mb-4">Loan Status Distribution</h3>
+                <div className="bg-white p-8 rounded-[2rem] shadow-sm border border-slate-100">
+                    <h3 className="text-lg font-black text-slate-800 mb-6">Portfolio Health</h3>
                     <div className="h-64 flex items-center justify-center">
                         {statusData.length > 0 ? (
                             <ResponsiveContainer width="100%" height="100%">
@@ -321,40 +436,40 @@ const Dashboard = () => {
                                         cx="50%"
                                         cy="50%"
                                         innerRadius={60}
-                                        outerRadius={80}
-                                        paddingAngle={5}
+                                        outerRadius={90}
+                                        paddingAngle={8}
                                         dataKey="value"
                                     >
                                         {statusData.map((entry, index) => (
-                                            <Cell key={`cell-${index}`} fill={entry.color} />
+                                            <Cell key={`cell-${index}`} fill={entry.color} stroke="none" />
                                         ))}
                                     </Pie>
                                     <Tooltip />
-                                    <Legend verticalAlign="bottom" height={36} />
+                                    <Legend verticalAlign="bottom" height={36} iconType="circle" />
                                 </PieChart>
                             </ResponsiveContainer>
                         ) : (
-                            <div className="text-slate-400 text-sm">No data for this period</div>
+                            <div className="text-slate-400 text-sm font-bold">Insufficient data for analysis.</div>
                         )}
                     </div>
                 </div>
 
                 {/* Loan Type Distribution */}
-                <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-100">
-                    <h3 className="text-lg font-bold text-slate-800 mb-4">Portfolio by Loan Type</h3>
+                <div className="bg-white p-8 rounded-[2rem] shadow-sm border border-slate-100">
+                    <h3 className="text-lg font-black text-slate-800 mb-6 font-mono">Product Diversification</h3>
                     <div className="h-64">
                         {typeData.length > 0 ? (
                             <ResponsiveContainer width="100%" height="100%">
                                 <BarChart data={typeData} layout="vertical">
-                                    <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} stroke="#e2e8f0" />
+                                    <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} stroke="#f1f5f9" />
                                     <XAxis type="number" hide />
-                                    <YAxis dataKey="name" type="category" width={100} stroke="#64748b" fontSize={11} tickLine={false} axisLine={false} />
-                                    <Tooltip cursor={{ fill: '#f1f5f9' }} formatter={(value) => `₱${value.toLocaleString()}`} />
-                                    <Bar dataKey="value" fill="#6366f1" radius={[0, 4, 4, 0]} barSize={20} />
+                                    <YAxis dataKey="name" type="category" width={120} stroke="#64748b" fontSize={10} fontWeight="bold" tickLine={false} axisLine={false} />
+                                    <Tooltip cursor={{ fill: '#f8fafc' }} formatter={(value) => `₱${value.toLocaleString()}`} />
+                                    <Bar dataKey="value" fill="#6366f1" radius={[0, 10, 10, 0]} barSize={24} />
                                 </BarChart>
                             </ResponsiveContainer>
                         ) : (
-                            <div className="flex items-center justify-center h-full text-slate-400 text-sm">No data for this period</div>
+                            <div className="flex items-center justify-center h-full text-slate-400 text-sm font-bold">Waiting for disursements.</div>
                         )}
                     </div>
                 </div>

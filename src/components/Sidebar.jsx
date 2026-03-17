@@ -1,6 +1,6 @@
 import React from 'react';
 import { useSystem } from '../context/AppContext';
-import { Home, Users, Wallet, CreditCard, ShieldCheck, LogOut, BarChart3 } from 'lucide-react';
+import { Home, Users, Wallet, CreditCard, ShieldCheck, LogOut, BarChart3, AlertTriangle } from 'lucide-react';
 
 const Sidebar = ({ activeView, setActiveView, isOpen }) => {
     const { currentUser, logout } = useSystem();
@@ -9,9 +9,10 @@ const Sidebar = ({ activeView, setActiveView, isOpen }) => {
     const menuItems = [
         { id: 'dashboard', label: 'Main Dashboard', icon: Home, roles: ['admin', 'officer', 'cashier'] },
         { id: 'analytics', label: 'Loans Analytics', icon: BarChart3, roles: ['admin', 'officer'] },
-        { id: 'customers', label: 'Customers', icon: Users, roles: ['admin', 'officer'] },
-        { id: 'loans', label: 'Loans', icon: Wallet, roles: ['admin', 'officer'] },
+        { id: 'customers', label: 'Customers', icon: Users, roles: ['admin', 'officer', 'cashier'] },
+        { id: 'loans', label: 'Loans', icon: Wallet, roles: ['admin', 'officer', 'cashier'] },
         { id: 'payments', label: 'Payments', icon: CreditCard, roles: ['admin', 'officer', 'cashier'] },
+        { id: 'overdue', label: 'Overdue', icon: AlertTriangle, roles: ['admin', 'officer', 'cashier'] },
         { id: 'accounts', label: 'Accounts', icon: ShieldCheck, roles: ['admin'] },
     ];
 

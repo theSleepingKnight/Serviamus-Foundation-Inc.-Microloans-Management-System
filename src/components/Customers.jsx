@@ -7,7 +7,7 @@ import Toast from './ui/Toast';
 const ITEMS_PER_PAGE = 10;
 
 const Customers = () => {
-    const { customers, toggleCustomerStatus, addNewCustomer, updateCustomer, loanGroups, loans, transferCustomer } = useSystem();
+    const { customers, toggleCustomerStatus, addNewCustomer, updateCustomer, loanGroups, loans, transferCustomer, canAccess } = useSystem();
     const [searchTerm, setSearchTerm] = useState('');
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
     const [editingCustomer, setEditingCustomer] = useState(null);
@@ -79,7 +79,7 @@ const Customers = () => {
         setIsAddModalOpen(false);
         setNewCustomer({
             lastName: '', firstName: '', middleName: '', extension: '',
-            email: '', mobileNumber: '', address: '',
+            email: '', mobileNumber: '', address: '', barangay: '',
             familyRefName: '', familyRefContact: '',
             colleagueRefName: '', colleagueRefContact: '',
             cbuBalance: '', sdBalance: ''
@@ -132,13 +132,15 @@ const Customers = () => {
                     <h2 className="text-2xl font-black text-slate-900 tracking-tight">Customer Database</h2>
                     <p className="text-sm text-slate-500 font-medium">Manage member profiles and financial balances</p>
                 </div>
-                <button
-                    onClick={() => setIsAddModalOpen(true)}
-                    className="flex items-center gap-2 bg-brand-600 hover:bg-brand-700 text-white px-5 py-2.5 rounded-xl transition-all font-bold shadow-lg shadow-brand-100 active:scale-95"
-                >
-                    <UserPlus size={18} />
-                    Register New Customer
-                </button>
+                {canAccess(['admin', 'officer']) && (
+                    <button
+                        onClick={() => setIsAddModalOpen(true)}
+                        className="flex items-center gap-2 bg-brand-600 hover:bg-brand-700 text-white px-5 py-2.5 rounded-xl transition-all font-bold shadow-lg shadow-brand-100 active:scale-95"
+                    >
+                        <UserPlus size={18} />
+                        Register New Customer
+                    </button>
+                )}
             </div>
 
             {/* Quick Stats Header */}
@@ -283,36 +285,40 @@ const Customers = () => {
                                             >
                                                 <Eye size={16} />
                                             </button>
-                                            <button
-                                                onClick={() => setEditingCustomer(customer)}
-                                                className="p-1.5 text-slate-400 hover:text-brand-600 hover:bg-brand-50 rounded-lg transition-colors"
-                                                title="Edit"
-                                            >
-                                                <Edit2 size={16} />
-                                            </button>
-                                            <button
-                                                onClick={() => {
-                                                    setTransferringCustomer(customer);
-                                                    setTransferData({ 
-                                                        barangay: customer.barangay, 
-                                                        groupId: getCustomerLoan(customer.id)?.groupId || '' 
-                                                    });
-                                                }}
-                                                className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
-                                                title="Transfer"
-                                            >
-                                                <ArrowRightLeft size={16} />
-                                            </button>
-                                            <button
-                                                onClick={() => handleToggleStatus(customer)}
-                                                className={`p-1.5 rounded-lg transition-colors ${customer.status === 'Active'
-                                                    ? 'text-slate-400 hover:text-red-600 hover:bg-red-50'
-                                                    : 'text-slate-400 hover:text-green-600 hover:bg-green-50'
-                                                    }`}
-                                                title={customer.status === 'Active' ? 'Disable' : 'Enable'}
-                                            >
-                                                {customer.status === 'Active' ? <UserX size={16} /> : <UserCheck size={16} />}
-                                            </button>
+                                            {canAccess(['admin', 'officer']) && (
+                                                <>
+                                                    <button
+                                                        onClick={() => setEditingCustomer(customer)}
+                                                        className="p-1.5 text-slate-400 hover:text-brand-600 hover:bg-brand-50 rounded-lg transition-colors"
+                                                        title="Edit"
+                                                    >
+                                                        <Edit2 size={16} />
+                                                    </button>
+                                                    <button
+                                                        onClick={() => {
+                                                            setTransferringCustomer(customer);
+                                                            setTransferData({ 
+                                                                barangay: customer.barangay, 
+                                                                groupId: getCustomerLoan(customer.id)?.groupId || '' 
+                                                            });
+                                                        }}
+                                                        className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
+                                                        title="Transfer"
+                                                    >
+                                                        <ArrowRightLeft size={16} />
+                                                    </button>
+                                                    <button
+                                                        onClick={() => handleToggleStatus(customer)}
+                                                        className={`p-1.5 rounded-lg transition-colors ${customer.status === 'Active'
+                                                            ? 'text-slate-400 hover:text-red-600 hover:bg-red-50'
+                                                            : 'text-slate-400 hover:text-green-600 hover:bg-green-50'
+                                                            }`}
+                                                        title={customer.status === 'Active' ? 'Disable' : 'Enable'}
+                                                    >
+                                                        {customer.status === 'Active' ? <UserX size={16} /> : <UserCheck size={16} />}
+                                                    </button>
+                                                </>
+                                            )}
                                         </div>
                                     </td>
                                 </tr>
@@ -345,7 +351,7 @@ const Customers = () => {
                 )}
             </div>
 
-            {/* Add Customer Modal (Same as before but with Toast integration via handleAddSubmit) */}
+            {/* Add Customer Modal */}
             {isAddModalOpen && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 overflow-y-auto">
                     <div className="bg-white rounded-xl shadow-xl w-full max-w-2xl p-6 animate-in fade-in zoom-in duration-200 my-8">
@@ -808,16 +814,18 @@ const Customers = () => {
 
                         {/* Footer */}
                         <div className="bg-slate-50 p-6 flex justify-end gap-3 border-t border-slate-100">
-                            <button
-                                onClick={() => {
-                                    setEditingCustomer(viewingCustomer);
-                                    setViewingCustomer(null);
-                                }}
-                                className="px-6 py-2.5 bg-white text-slate-700 font-bold rounded-xl border border-slate-200 hover:bg-slate-100 transition-all flex items-center gap-2"
-                            >
-                                <Edit2 size={16} />
-                                Edit Basic Info
-                            </button>
+                            {canAccess(['admin', 'officer']) && (
+                                <button
+                                    onClick={() => {
+                                        setEditingCustomer(viewingCustomer);
+                                        setViewingCustomer(null);
+                                    }}
+                                    className="px-6 py-2.5 bg-white text-slate-700 font-bold rounded-xl border border-slate-200 hover:bg-slate-100 transition-all flex items-center gap-2"
+                                >
+                                    <Edit2 size={16} />
+                                    Edit Basic Info
+                                </button>
+                            )}
                             <button
                                 onClick={() => setViewingCustomer(null)}
                                 className="px-6 py-2.5 bg-brand-600 text-white font-bold rounded-xl hover:bg-brand-700 transition-all shadow-lg shadow-brand-100"

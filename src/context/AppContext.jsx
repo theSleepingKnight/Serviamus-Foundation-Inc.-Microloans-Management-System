@@ -260,6 +260,22 @@ export const SystemProvider = ({ children }) => {
         return newLoan;
     };
 
+    const approveLoan = (loanId) => {
+        setLoans(prev => prev.map(l => l.id === loanId ? { ...l, status: 'Approved' } : l));
+        logAction(`Approved Loan #${loanId}. Awaiting Disbursement.`);
+    };
+
+    const disburseLoan = (loanId) => {
+        const today = new Date().toISOString().split('T')[0];
+        setLoans(prev => prev.map(l => l.id === loanId ? { 
+            ...l, 
+            status: 'Active', 
+            startDate: today,
+            remainingBalance: l.amount // Ensure balance is set on disbursement
+        } : l));
+        logAction(`DISBURSED Loan #${loanId}. Funds released and cycle started.`);
+    };
+
     const updateLoanStatus = (loanId, status) => {
         setLoans(prev => prev.map(l => l.id === loanId ? { ...l, status } : l));
         logAction(`Updated Loan #${loanId} status to ${status}`);
@@ -402,6 +418,8 @@ export const SystemProvider = ({ children }) => {
             createStaffAccount,
             updateStaffAccount,
             deleteStaffAccount,
+            approveLoan,
+            disburseLoan,
             createLoanGroup,
             getOfficerCapacity,
             updateLoanGroup,

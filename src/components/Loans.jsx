@@ -10,7 +10,8 @@ const ITEMS_PER_PAGE = 10;
 const Loans = () => {
     const { 
         loans, customers, staffAccounts, loanGroups, currentUser, canAccess, settings, updateSettings,
-        createLoan, updateLoanStatus, updateLoan, createLoanGroup, getOfficerCapacity, resetSystemData, updateLoanGroup 
+        createLoan, updateLoanStatus, updateLoan, createLoanGroup, getOfficerCapacity, resetSystemData, updateLoanGroup, approveLoan,
+        transactions
     } = useSystem();
 
     // UI State
@@ -45,6 +46,24 @@ const Loans = () => {
     const getCustomerName = (id) => customers.find(c => c.id === id)?.name || 'Unknown';
     const getOfficerName = (id) => staffAccounts.find(s => s.id === id)?.name || 'Unknown';
     const getGroupName = (id) => loanGroups.find(g => g.id === id)?.name || 'N/A';
+
+    const canManageGroup = (group) => {
+        if (!currentUser || !group) return false;
+        if (currentUser.role === 'admin') return true;
+        if (currentUser.role === 'officer') {
+            return currentUser.barangays?.includes(group.barangay);
+        }
+        return false;
+    };
+
+    const isMemberOverdue = (loanId) => {
+        const loan = loans.find(l => l.id === loanId);
+        if (!loan || loan.status !== 'Active') return false;
+        const loanTxns = transactions.filter(t => t.loanId === loanId).sort((a,b) => new Date(b.date) - new Date(a.date));
+        const lastDate = loanTxns[0] ? new Date(loanTxns[0].date) : new Date(loan.startDate);
+        const diff = Math.floor((new Date() - lastDate) / (1000 * 60 * 60 * 24));
+        return diff > 7;
+    };
 
     // Derived State for Creation Form
     const selectedCustomer = useMemo(() => 
@@ -196,26 +215,30 @@ const Loans = () => {
                             Update Fees
                         </button>
                     )}
-                    <button
-                        onClick={() => {
-                            setNewGroup({ name: '', barangay: '', officerId: '' });
-                            setIsAddGroupModalOpen(true);
-                        }}
-                        className="flex items-center gap-2 bg-slate-800 hover:bg-slate-900 text-white px-4 py-2 rounded-lg transition-colors text-sm font-bold shadow-sm"
-                    >
-                        <Plus size={18} />
-                        New Group
-                    </button>
-                    <button
-                        onClick={() => {
-                            setNewLoan({ customerId: '', loanType: 'REGULAR', amount: '', term: '', groupId: '', officerId: '' });
-                            setIsModalOpen(true);
-                        }}
-                        className="flex items-center gap-2 bg-brand-600 hover:bg-brand-700 text-white px-4 py-2 rounded-lg transition-colors text-sm font-bold shadow-sm"
-                    >
-                        <Plus size={18} />
-                        New Loan
-                    </button>
+                    {canAccess(['admin', 'officer']) && (
+                        <>
+                            <button
+                                onClick={() => {
+                                    setNewGroup({ name: '', barangay: '', officerId: '' });
+                                    setIsAddGroupModalOpen(true);
+                                }}
+                                className="flex items-center gap-2 bg-slate-800 hover:bg-slate-900 text-white px-4 py-2 rounded-lg transition-colors text-sm font-bold shadow-sm"
+                            >
+                                <Plus size={18} />
+                                New Group
+                            </button>
+                            <button
+                                onClick={() => {
+                                    setNewLoan({ customerId: '', loanType: 'REGULAR', amount: '', term: '', groupId: '', officerId: '' });
+                                    setIsModalOpen(true);
+                                }}
+                                className="flex items-center gap-2 bg-brand-600 hover:bg-brand-700 text-white px-4 py-2 rounded-lg transition-colors text-sm font-bold shadow-sm"
+                            >
+                                <Plus size={18} />
+                                New Loan
+                            </button>
+                        </>
+                    )}
                 </div>
             </div>
 
@@ -386,20 +409,18 @@ const Loans = () => {
                                                 const customer = customers.find(c => c.id === loan.customerId);
                                                 const isMatch = (statusFilter === 'All' || loan.status === statusFilter) &&
                                                                (searchTerm === '' || customer?.name.toLowerCase().includes(searchTerm.toLowerCase()));
+                                                const overdue = isMemberOverdue(loan.id);
                                                 return (
-                                                    <div 
-                                                        key={loan.id} 
-                                                        className={`flex items-center justify-between p-3 bg-white rounded-2xl border transition-all ${
-                                                            !isMatch 
-                                                                ? 'opacity-40 grayscale-[0.5]' 
-                                                                : isActive ? 'border-slate-100 ring-1 ring-brand-100 shadow-sm' : 'border-slate-200 shadow-none'
-                                                        }`}
-                                                    >
+                                                    <div key={loan.id} className={`flex items-center justify-between p-3 rounded-2xl border transition-all ${overdue ? 'bg-red-50 border-red-200 shadow-sm shadow-red-100' : 'bg-white border-slate-100'}`}>
                                                         <div className="flex items-center gap-3">
-                                                            <span className="text-xs font-black text-slate-300 w-4">{idx + 1}.</span>
+                                                            <div className={`w-8 h-8 rounded-lg flex items-center justify-center font-black text-xs ${overdue ? 'bg-red-500 text-white' : 'bg-slate-100 text-slate-400'}`}>
+                                                                {idx + 1}
+                                                            </div>
                                                             <div>
-                                                                <p className={`text-sm font-bold transition-colors ${isActive ? 'text-slate-800' : 'text-slate-500'}`}>{customer?.name}</p>
-                                                                <p className="text-[10px] font-mono text-slate-400">₱{loan.amount.toLocaleString()} • {loan.loanType}</p>
+                                                                <p className={`text-xs font-black uppercase tracking-tight ${overdue ? 'text-red-700' : 'text-slate-900'}`}>{customer?.name}</p>
+                                                                <p className={`text-[10px] font-bold ${overdue ? 'text-red-500' : 'text-slate-400'}`}>
+                                                                    {overdue ? 'DELINQUENT - CALL' : `₱${loan.remainingBalance.toLocaleString()} • ${loan.loanType}`}
+                                                                </p>
                                                             </div>
                                                         </div>
                                                         <div className="flex items-center gap-3">
@@ -415,10 +436,15 @@ const Loans = () => {
                                                                     >
                                                                         <FileText size={14} />
                                                                     </button>
-                                                                    {loan.status === 'Pending' && (
+                                                                    {loan.status === 'Pending' && canManageGroup(group) && (
                                                                         <button 
-                                                                            onClick={() => updateLoanStatus(loan.id, 'Active')} 
-                                                                            className="p-1.5 text-emerald-600 hover:bg-emerald-50 rounded-lg transition-all" 
+                                                                            onClick={() => {
+                                                                                if(window.confirm('Approve this loan application?')) {
+                                                                                    approveLoan(loan.id);
+                                                                                    setToast({ message: 'Loan application approved!', type: 'success' });
+                                                                                }
+                                                                            }}
+                                                                            className="p-1.5 text-slate-400 hover:text-emerald-600 transition-all"
                                                                             title="Approve Loan"
                                                                         >
                                                                             <CheckCircle size={14} />
@@ -436,50 +462,37 @@ const Loans = () => {
                                             </div>
                                         )}
                                     </div>
-
                                     {/* Footer Actions */}
                                     <div className={`p-4 border-t flex gap-2 transition-colors duration-300 ${isActive ? 'bg-slate-50/50 border-slate-100' : 'bg-slate-100 border-slate-200'}`}>
-                                        {isActive ? (
-                                            <>
-                                                {groupLoans.length < 5 && (
+                                        <div className="flex flex-1 gap-2">
+                                            {isActive && canManageGroup(group) && (
+                                                <>
                                                     <button 
                                                         onClick={() => {
-                                                            setNewLoan({ 
-                                                                customerId: '', 
-                                                                loanType: 'REGULAR', 
-                                                                amount: '', 
-                                                                term: '', 
-                                                                groupId: group.id, 
-                                                                officerId: group.officerId 
-                                                            });
+                                                            setNewLoan({ ...newLoan, groupId: group.id, officerId: group.officerId });
                                                             setIsModalOpen(true);
                                                         }}
-                                                        className="flex-1 py-2 bg-white text-brand-600 border border-brand-200 rounded-xl text-xs font-black hover:bg-brand-50 transition-colors flex items-center justify-center gap-2"
+                                                        className="text-[10px] font-black uppercase text-brand-600 hover:text-brand-700 flex items-center gap-1 bg-white px-2 py-1 rounded-md border border-slate-200"
                                                     >
-                                                        <Plus size={14} />
-                                                        Add Member
+                                                        <Plus size={12} /> Add Member
                                                     </button>
-                                                )}
+                                                    <button 
+                                                        onClick={() => setArchiveConfirmGroup(group)}
+                                                        className="text-[10px] font-black uppercase text-slate-400 hover:text-red-500 flex items-center gap-1 bg-white px-2 py-1 rounded-md border border-slate-200"
+                                                    >
+                                                        <Archive size={12} /> Archive
+                                                    </button>
+                                                </>
+                                            )}
+                                            {!isActive && canManageGroup(group) && (
                                                 <button 
-                                                    onClick={() => setArchiveConfirmGroup(group)}
-                                                    className="px-3 py-2 text-slate-400 hover:text-red-600 bg-white border border-slate-200 rounded-xl text-xs font-black hover:bg-red-50 transition-all flex items-center gap-2"
-                                                    title="Archive Group"
+                                                    onClick={() => updateLoanGroup(group.id, { status: 'Active' })}
+                                                    className="text-[10px] font-black uppercase text-brand-600 hover:text-brand-700 flex items-center gap-1 bg-white px-2 py-1 rounded-md border border-slate-200"
                                                 >
-                                                    <Archive size={14} />
+                                                    <RotateCcw size={12} /> Restore Group
                                                 </button>
-                                            </>
-                                        ) : (
-                                            <button 
-                                                onClick={() => {
-                                                    updateLoanGroup(group.id, { status: 'Active' });
-                                                    setToast({ message: `Group ${group.name} is now Active.`, type: 'success' });
-                                                }}
-                                                className="flex-1 py-2 bg-emerald-600 text-white border border-emerald-500 rounded-xl text-xs font-black hover:bg-emerald-700 transition-colors shadow-sm flex items-center justify-center gap-2"
-                                            >
-                                                <RotateCcw size={14} />
-                                                Restore Group
-                                            </button>
-                                        )}
+                                            )}
+                                        </div>
                                         <button 
                                             onClick={() => exportGroupReportPDF(group, loans, customers, staffAccounts)}
                                             className={`px-4 py-2 rounded-xl text-xs font-black transition-all flex items-center gap-2 ${
@@ -552,8 +565,8 @@ const Loans = () => {
                                                     <button onClick={() => setScheduleModalLoan(loan)} className="p-1.5 text-slate-400 hover:text-blue-600" title="Schedule">
                                                         <Calendar size={16} />
                                                     </button>
-                                                    {loan.status === 'Pending' && (
-                                                        <button onClick={() => updateLoanStatus(loan.id, 'Active')} className="p-1.5 text-green-600" title="Approve">
+                                                    {loan.status === 'Pending' && canAccess(['admin', 'officer']) && (
+                                                        <button onClick={() => approveLoan(loan.id)} className="p-1.5 text-green-600" title="Approve">
                                                             <CheckCircle size={16} />
                                                         </button>
                                                     )}
